@@ -89,6 +89,7 @@ export class OperationField {
     this._buildSkyCloudDhuoGcp();
     this._buildTelemetryRoutes();
     this._buildPacketPool();
+    this._buildScenarioEffects();
 
     sm.addUpdater((dt) => this.update(dt));
   }
@@ -98,6 +99,7 @@ export class OperationField {
     for (const el of Object.values(this.labelEls)) {
       el.style.display = v ? '' : 'none';
     }
+    this._syncScenarioLabels();
   }
 
   setHighlight(id) {
@@ -825,12 +827,225 @@ export class OperationField {
     this.labelEls[id] = el;
   }
 
+  // ---- 12. Efeitos 3D dos 5 Cenários de Falha & Inteligência Operacional ----
+  _buildScenarioEffects() {
+    this.scenarioGroups = {};
+    this.scenarioBadges = {};
+
+    const redBeaconMat = new THREE.MeshBasicMaterial({
+      color: 0xff3b3b,
+      transparent: true,
+      opacity: 0.78,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    const warnBeaconMat = new THREE.MeshBasicMaterial({
+      color: 0xfacc15,
+      transparent: true,
+      opacity: 0.78,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+
+    // 1. Queda de Energia (D6 -> Autonomia Hídrica)
+    const gOutage = new THREE.Group();
+    gOutage.visible = false;
+    const outageRingEea = new THREE.Mesh(new THREE.RingGeometry(2.4, 3.1, 32), redBeaconMat);
+    outageRingEea.rotation.x = -Math.PI / 2;
+    outageRingEea.position.set(5.5, 0.22, -13.5);
+    const outageRingRap = new THREE.Mesh(new THREE.RingGeometry(2.6, 3.3, 32), redBeaconMat);
+    outageRingRap.rotation.x = -Math.PI / 2;
+    outageRingRap.position.set(-6.8, 1.08, -14.2);
+    gOutage.add(outageRingEea, outageRingRap);
+    this.group.add(gOutage);
+    this.scenarioGroups.power_outage_cascade = gOutage;
+    this._addScenarioBadge(
+      'power_outage_cascade',
+      gOutage,
+      [-0.5, 7.6, -13.8],
+      'crit',
+      'QUEDA DE ENERGIA (KFF=0) · EEA-01 PARADA',
+      'Nível RAP caindo (28%) · Autonomia calculada: 3,8 h · TMR: 95 min'
+    );
+
+    // 2. Tempestade Severa (Clima -> Poços + Captação + ETA)
+    const gStorm = new THREE.Group();
+    gStorm.visible = false;
+    const darkCloudMat = new THREE.MeshStandardMaterial({
+      color: 0x263244,
+      emissive: 0x101824,
+      roughness: 0.7,
+      transparent: true,
+      opacity: 0.88,
+    });
+    const stormCenter = { x: -24.5, y: 11.2, z: -8.5 };
+    const stormPuffs = [
+      [-4.2, 0, 0, 2.8],
+      [-1.5, 0.4, -0.5, 3.5],
+      [1.8, 0.3, 0.4, 3.4],
+      [4.5, -0.1, -0.2, 2.7],
+      [0, -0.2, 2.2, 2.9],
+    ];
+    const sGeo = new THREE.SphereGeometry(1, 18, 14);
+    for (const [px, py, pz, r] of stormPuffs) {
+      const m = new THREE.Mesh(sGeo, darkCloudMat);
+      m.position.set(stormCenter.x + px, stormCenter.y + py, stormCenter.z + pz);
+      m.scale.set(r * 1.35, r * 0.6, r * 1.05);
+      gStorm.add(m);
+    }
+    // Feixes de chuva e raio sob a tempestade
+    const rainMat = new THREE.MeshBasicMaterial({
+      color: 0x6ec5ff,
+      transparent: true,
+      opacity: 0.42,
+      depthWrite: false,
+    });
+    this.rainLines = [];
+    for (let i = 0; i < 18; i++) {
+      const rx = stormCenter.x - 5.5 + (i % 6) * 2.2;
+      const rz = stormCenter.z - 2.8 + Math.floor(i / 6) * 2.8;
+      const drop = cylinder(0.035, 0.035, 9.5, rainMat, 6, { cast: false, receive: false });
+      at(drop, rx, 5.5, rz);
+      gStorm.add(drop);
+      this.rainLines.push(drop);
+    }
+    this.lightningBolt = cylinder(0.12, 0.05, 10.2, warnBeaconMat, 6, { cast: false, receive: false });
+    at(this.lightningBolt, -26.0, 5.6, -5.0);
+    gStorm.add(this.lightningBolt);
+    const stormZone = new THREE.Mesh(new THREE.RingGeometry(6.8, 7.5, 36), warnBeaconMat);
+    stormZone.rotation.x = -Math.PI / 2;
+    stormZone.position.set(-24.5, 0.85, -8.5);
+    gStorm.add(stormZone);
+    this.group.add(gStorm);
+    this.scenarioGroups.severe_weather = gStorm;
+    this._addScenarioBadge(
+      'severe_weather',
+      gStorm,
+      [-24.5, 13.8, -8.5],
+      'warn',
+      'ALERTA DE TEMPESTADE SEVERA · MANANCIAL & POÇOS',
+      'Cruzamento ArcGIS area_influencia: 4 Poços + Captação sob risco elétrico e turbidez'
+    );
+
+    // 3. Falha de VRP & Vazamento Subterrâneo (D4 -> Anomalia de Vazão DMC)
+    const gBurst = new THREE.Group();
+    gBurst.visible = false;
+    const burstRing = new THREE.Mesh(new THREE.RingGeometry(1.8, 2.5, 32), redBeaconMat);
+    burstRing.rotation.x = -Math.PI / 2;
+    burstRing.position.set(3.6, -1.35, 12.6);
+    gBurst.add(burstRing);
+
+    // Jatos 3D de água jorrando da tubulação subterrânea na vala escavada
+    this.leakJets = [];
+    for (let j = 0; j < 5; j++) {
+      const jet = cylinder(0.06, 0.32, 2.6, M.waterStream, 12, { cast: false });
+      jet.position.set(3.6 + (j - 2) * 0.25, -0.2, 12.6 + ((j % 2) - 0.5) * 0.25);
+      jet.rotation.z = (j - 2) * 0.14;
+      gBurst.add(jet);
+      this.leakJets.push(jet);
+    }
+    const puddle = cylinder(2.1, 2.1, 0.12, M.waterStream, 24, { cast: false });
+    at(puddle, 3.6, -2.08, 12.6);
+    gBurst.add(puddle);
+    this.group.add(gBurst);
+    this.scenarioGroups.vrp_burst_leak = gBurst;
+    this._addScenarioBadge(
+      'vrp_burst_leak',
+      gBurst,
+      [3.6, 3.4, 12.6],
+      'crit',
+      'SOBREPRESSÃO VRP (68,4 mca) + VAZAMENTO SUBTERRÂNEO',
+      'Violação pm_..._faixa (>50 mca) · Salto de vazão mínima noturna no DMC (+42%)'
+    );
+
+    // 4. Manobra / Manutenção Programada em Setor de Manobra
+    const gMaint = new THREE.Group();
+    gMaint.visible = false;
+    const maintPts = [
+      [0.5, 0.25, 2.2],
+      [10.2, 0.25, 2.2],
+      [10.2, 0.25, 7.2],
+      [0.5, 0.25, 7.2],
+      [0.5, 0.25, 2.2],
+    ];
+    const maintGeo = new LineGeometry();
+    maintGeo.setPositions(maintPts.flat());
+    const maintMat = new LineMaterial({
+      color: COLORS.yellow,
+      linewidth: 3.2,
+      dashed: true,
+      dashSize: 0.6,
+      gapSize: 0.3,
+    });
+    const maintLine = new Line2(maintGeo, maintMat);
+    maintLine.computeLineDistances();
+    this.lineMats.push(maintMat);
+    gMaint.add(maintLine);
+    this.group.add(gMaint);
+    this.scenarioGroups.planned_maintenance = gMaint;
+    this._addScenarioBadge(
+      'planned_maintenance',
+      gMaint,
+      [5.4, 8.2, 4.5],
+      'info',
+      'MANOBRA PROGRAMADA · SETOR #1408 (08:00–12:00)',
+      'Polígono setor_manobra isolado · Queda de pressão qualificada (sem falso alarme no CCO)'
+    );
+
+    // 5. Subpressão em Ponto Crítico (< 10 mca na Ponta de Rede / Casa em Corte)
+    const gLowP = new THREE.Group();
+    gLowP.visible = false;
+    for (const [lx, lz] of [
+      [-23.5, 12.2],
+      [25.5, 0.5],
+      [28.0, 12.5],
+    ]) {
+      const r = new THREE.Mesh(new THREE.RingGeometry(2.0, 2.6, 28), warnBeaconMat);
+      r.rotation.x = -Math.PI / 2;
+      r.position.set(lx, 0.25, lz);
+      gLowP.add(r);
+    }
+    this.group.add(gLowP);
+    this.scenarioGroups.critical_low_pressure = gLowP;
+    this._addScenarioBadge(
+      'critical_low_pressure',
+      gLowP,
+      [-23.5, 6.6, 12.2],
+      'warn',
+      'SUBPRESSÃO EM PONTO CRÍTICO · 6,8 mca (< MÍN 10 mca)',
+      'Detectado em vw_..._pressao_ponto_atual na cota alta durante horário de pico'
+    );
+  }
+
+  _addScenarioBadge(id, parent, pos, kind, title, sub) {
+    const el = document.createElement('div');
+    el.className = `scenario-3d-badge ${kind}`;
+    el.style.display = 'none';
+    el.innerHTML = `<strong>${title}</strong><span>${sub}</span>`;
+    const obj = new CSS2DObject(el);
+    obj.position.set(...pos);
+    parent.add(obj);
+    this.scenarioBadges[id] = el;
+  }
+
+  _syncScenarioLabels() {
+    const active = this.group.visible ? this.sim.activeScenario : null;
+    for (const [id, g] of Object.entries(this.scenarioGroups || {})) {
+      g.visible = id === active;
+    }
+    for (const [id, el] of Object.entries(this.scenarioBadges || {})) {
+      el.style.display = id === active ? '' : 'none';
+    }
+  }
+
   update(dt) {
     const w = this.sm.container.clientWidth;
     const h = this.sm.container.clientHeight;
     for (const m of this.lineMats) m.resolution.set(w, h);
 
     if (!this.group.visible) return;
+
+    this._syncScenarioLabels();
 
     if (this.cloudGroup) {
       this.cloudGroup.position.y = Math.sin(this.sim.time * 0.9) * 0.16;
@@ -840,10 +1055,28 @@ export class OperationField {
       const lvl = this.sim.fieldState.reservoirLevel;
       this.waterMesh.scale.y = Math.max(0.2, Math.min(1, lvl));
       this.waterMesh.position.y = 1.35 + 1.4 * this.waterMesh.scale.y;
+      this.waterMesh.material.color.setHex(
+        this.sim.activeScenario === 'power_outage_cascade' ? 0xef4444 : COLORS.waterBright
+      );
     }
 
-    for (const imp of this.impellers) {
-      imp.rotation.z += dt * 5.0 * (this.sim.running ? this.sim.speed : 0);
+    // Se houver queda de energia, a bomba da EEA-01 para de girar
+    for (let i = 0; i < this.impellers.length; i++) {
+      if (this.sim.activeScenario === 'power_outage_cascade' && i < 2) continue;
+      this.impellers[i].rotation.z += dt * 5.0 * (this.sim.running ? this.sim.speed : 0);
+    }
+
+    // Animação do jato de vazamento subterrâneo (VRP burst)
+    if (this.sim.activeScenario === 'vrp_burst_leak' && this.leakJets) {
+      for (let j = 0; j < this.leakJets.length; j++) {
+        const s = 0.75 + 0.35 * Math.sin(this.sim.time * 9 + j * 1.4);
+        this.leakJets[j].scale.set(1, s, 1);
+      }
+    }
+
+    // Animação de relâmpago na tempestade severa
+    if (this.sim.activeScenario === 'severe_weather' && this.lightningBolt) {
+      this.lightningBolt.visible = Math.sin(this.sim.time * 14) > 0.65;
     }
 
     for (const [k, ring] of Object.entries(this.pulseRings)) {

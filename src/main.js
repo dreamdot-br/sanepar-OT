@@ -115,7 +115,7 @@ selection.on(() => {
   uiUpdate();
 });
 
-for (const ev of ['run:change', 'speed:change', 'night:change', 'sim:reset']) {
+for (const ev of ['run:change', 'speed:change', 'night:change', 'sim:reset', 'scenario:change']) {
   sim.bus.on(ev, uiUpdate);
 }
 
@@ -126,6 +126,7 @@ window.addEventListener('keydown', (e) => {
     sim.setRunning(!sim.running);
   } else if (e.code === 'Escape') {
     if (selection.type) selection.clear();
+    else if (sim.activeScenario) sim.setScenario(null);
     else if (sim.night.active) sim.stopNightCycle();
   } else if (e.key === '1') {
     ctx.setView('operacional');

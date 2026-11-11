@@ -334,6 +334,125 @@ export const FIELD_ITEMS = {
   },
 };
 
+// ---- 5 Cenários Interativos de Falha & Inteligência Operacional na Cidade 3D ----
+export const FIELD_SCENARIOS = {
+  power_outage_cascade: {
+    id: 'power_outage_cascade',
+    shortLabel: '1 · Queda de Energia (D6 → Autonomia)',
+    title: 'Queda de Energia na Elevatória → Risco de Desabastecimento em Cascata',
+    severity: 'critical',
+    cameraPreset: 'campo_reservatorio',
+    highlightItem: 'uo_elevatoria',
+    tagAlert: {
+      uid: 'SNP-CTB-EEA01-KFF01',
+      parque: 'Próprio SCADA (1m)',
+      valor: 'FALTA DE ENERGIA (0) · Nível RAP: 28% (Crítico)',
+      dest: 'Refined Energia (D6) + Autonomia',
+    },
+    beforeText:
+      'O sinal de falta de fase (KFF) na elevatória ficava isolado no SCADA elétrico, enquanto o nível do reservatório caía silenciosamente até faltar água nos bairros.',
+    nowText:
+      'O coletor de 1 min atualiza vw_sanepar_refined_energia_unidade_atual, abre o evento em ft_..._energia_interrupcao e cruza via BOPE/SDOA qual reservatório depende daquela EEA, calculando a autonomia restante (3,8 h) antes do desabastecimento.',
+    objectsUsed: [
+      'vw_sanepar_refined_energia_unidade_atual (190 UOs)',
+      'ft_sanepar_refined_energia_interrupcao (início, fim e duração)',
+      'tb_sanepar_raw_operacional_bope_composicao_sistema (10.742 vínculos)',
+    ],
+  },
+  severe_weather: {
+    id: 'severe_weather',
+    shortLabel: '2 · Tempestade Severa (Clima → Poços/ETA)',
+    title: 'Frente de Tempestade Severa → Pré-Alarme em Manancial, Poços e Rede Elétrica',
+    severity: 'warning',
+    cameraPreset: 'campo_manancial',
+    highlightItem: 'uo_poco',
+    tagAlert: {
+      uid: 'SNP-LON-POC18-KFF01',
+      parque: 'Terceiros (120s) + Geo',
+      valor: 'ALERTA METEOROLÓGICO · 4 Poços + 1 Captação na Área de Risco',
+      dest: 'Trusted Geo + Refined Energia (D6)',
+    },
+    beforeText:
+      'Chuvas intensas desligavam dezenas de poços artesianos distantes e elevavam a turbidez na captação sem visão espacial consolidada de quais sistemas seriam afetados.',
+    nowText:
+      'O cruzamento espacial entre as polígonais geográficas (dm_sanepar_trusted_geo_area_influencia e uo_poco / uo_captacao) identifica preventivamente as UOs sob a mancha de tempestade para manobra antecipada de reservação.',
+    objectsUsed: [
+      'dm_sanepar_trusted_geo_uo_poco (4.177) & uo_captacao (1.524)',
+      'dm_sanepar_refined_distribuicao_agua_geo_area_influencia (987)',
+      'vw_sanepar_refined_energia_unidade_atual (190 UOs)',
+    ],
+  },
+  vrp_burst_leak: {
+    id: 'vrp_burst_leak',
+    shortLabel: '3 · Falha VRP & Vazamento Subterrâneo (D4)',
+    title: 'Sobrepressão em VRP + Vazamento Oculto na Rede Subterrânea',
+    severity: 'critical',
+    cameraPreset: 'campo_rede',
+    highlightItem: 'uo_rede_vrp',
+    tagAlert: {
+      uid: 'SNP-CTB-DMC02-PT03',
+      parque: 'Terceiros (120s)',
+      valor: '68,4 mca (LIMITE MAX: 50 mca) · Vazão Mín Noturna +42%',
+      dest: 'Refined Pressão (D4) + Anomalias Vazão',
+    },
+    beforeText:
+      'Uma VRP travada aberta durante a madrugada gerava sobrepressão e rompia tubulações subterrâneas sem aflorar no asfalto, mantendo perda física invisível por dias.',
+    nowText:
+      'As leituras de 120 s em vw_sanepar_refined_distribuicao_agua_pressao_ponto_atual são comparadas com as réguas vigentes (pm_sanepar_refined_parametro_faixa), apontando na hora a VRP fora de faixa e o salto de vazão no DMC.',
+    objectsUsed: [
+      'vw_sanepar_refined_distribuicao_agua_pressao_ponto_atual (3.587 pontos)',
+      'dm_sanepar_refined_distribuicao_agua_pressao_parametro_regra (10)',
+      'pm_sanepar_refined_parametro_faixa (23 réguas e faixas)',
+    ],
+  },
+  planned_maintenance: {
+    id: 'planned_maintenance',
+    shortLabel: '4 · Manobra Programada (Setor #1408)',
+    title: 'Intervenção Programada em Campo → Isolamento de Setor sem Falso Alarme',
+    severity: 'info',
+    cameraPreset: 'campo_rede',
+    highlightItem: 'uo_setor_manobra',
+    tagAlert: {
+      uid: 'SNP-CTB-SM1408-PT01',
+      parque: 'Terceiros (120s) + Parâmetros',
+      valor: '0,8 mca · JANELA PROGRAMADA ATIVA (08:00–12:00)',
+      dest: 'Refined Parâmetros + Geo Setor Manobra',
+    },
+    beforeText:
+      'O fechamento de registro para manutenção planejada derrubava a pressão dos sensores a jusante e inundava o CCO com falsos alarmes de rompimento.',
+    nowText:
+      'O polígono do setor (dm_sanepar_trusted_geo_setor_manobra — 41.924 setores) e a janela cadastrada (pm_sanepar_refined_parametro_janela_diaria) qualificam automaticamente a queda de pressão como intervenção planejada.',
+    objectsUsed: [
+      'dm_sanepar_trusted_geo_setor_manobra (41.924 polígonos)',
+      'pm_sanepar_refined_parametro_janela_diaria (janelas horárias)',
+      'dm_sanepar_refined_distribuicao_agua_pressao_ponto_geo (3.533)',
+    ],
+  },
+  critical_low_pressure: {
+    id: 'critical_low_pressure',
+    shortLabel: '5 · Subpressão em Ponto Crítico (< 10 mca)',
+    title: 'Subpressão em Ponta de Rede / Cota Alta durante Horário de Pico',
+    severity: 'warning',
+    cameraPreset: 'campo_rede',
+    highlightItem: 'uo_rede_vrp',
+    tagAlert: {
+      uid: 'SNP-MGA-DMC09-PT04',
+      parque: 'Terceiros (120s)',
+      valor: '6,8 mca (ABAIXO DO MÍNIMO REGULATÓRIO 10 mca)',
+      dest: 'Refined Pressão (D4 · Ponto Crítico)',
+    },
+    beforeText:
+      'A pressão na saída da ETA/Reservatório parecia normal (38 mca), mas imóveis nas pontas de rede mais altas sofriam falta de pressão no horário de pico sem visibilidade no CCO.',
+    nowText:
+      'Os 3.587 sensores distribuídos nas zonas de pressão (dm_..._geo_zona_pressao) expõem em tempo real (frescor 120 s) exatamente quais DMCs violaram a faixa mínima parametrizada.',
+    objectsUsed: [
+      'vw_sanepar_refined_distribuicao_agua_pressao_ponto_atual (3.587)',
+      'ft_sanepar_refined_distribuicao_agua_pressao_ponto_dia (88.173)',
+      'dm_sanepar_refined_distribuicao_agua_geo_zona_pressao (3.776)',
+    ],
+  },
+};
+
 // ---- Nós da Frente 2 (Plataforma de Dados / Lakehouse GCP) — 100% Fiel ao Inventário 2.html ----
 export const LAKEHOUSE_NODES = {
   // 1. FONTES SANEPAR & BARRAMENTO DHuO

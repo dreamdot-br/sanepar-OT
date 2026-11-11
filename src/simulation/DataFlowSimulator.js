@@ -1,6 +1,7 @@
 // Motor determinístico da simulação Sanepar OT & Lakehouse (JS puro, sem DOM nem Three.js).
 // A cena 3D e os contadores da interface apenas leem o estado exposto por esta classe.
 import { DT, SEED, SIM_RATES, NIGHT_PHASES } from '../config.js';
+import { FIELD_SCENARIOS } from '../content/catalog.js';
 import { EventBus } from './EventBus.js';
 
 const SAMPLE_TAGS = [
@@ -66,6 +67,7 @@ export class DataFlowSimulator {
 
     this.fieldPackets = [];
     this.lakePackets = [];
+    this.activeScenario = null;
 
     this.fieldState = {
       reservoirLevel: 0.74,
@@ -111,6 +113,9 @@ export class DataFlowSimulator {
   }
 
   _nextSampleTag() {
+    if (this.activeScenario && FIELD_SCENARIOS[this.activeScenario]) {
+      return FIELD_SCENARIOS[this.activeScenario].tagAlert;
+    }
     const tpl = SAMPLE_TAGS[this._tagIdx % SAMPLE_TAGS.length];
     this._tagIdx++;
     const delta = (this._rand() - 0.5) * 2 * tpl.amp;
@@ -124,6 +129,13 @@ export class DataFlowSimulator {
       valor: val,
       dest: tpl.dest,
     };
+  }
+
+  setScenario(id) {
+    const next = id && FIELD_SCENARIOS[id] ? id : null;
+    this.activeScenario = this.activeScenario === next ? null : next;
+    this.counters.sampleTag = this._nextSampleTag();
+    this.bus.emit('scenario:change', this.activeScenario);
   }
 
   setRunning(v) {
@@ -173,8 +185,19 @@ export class DataFlowSimulator {
     this.tick++;
     this.time += dt;
 
-    this.fieldState.reservoirLevel = 0.72 + 0.08 * Math.sin(this.time * 0.35);
-    this.fieldState.vrpPressureMca = 34.5 + 1.8 * Math.sin(this.time * 0.6 + 1.1);
+    if (this.activeScenario === 'power_outage_cascade') {
+      this.fieldState.reservoirLevel = 0.28 + 0.03 * Math.sin(this.time * 2.2);
+      this.fieldState.pumpActive = false;
+    } else {
+      this.fieldState.reservoirLevel = 0.72 + 0.08 * Math.sin(this.time * 0.35);
+      this.fieldState.pumpActive = true;
+    }
+    this.fieldState.vrpPressureMca =
+      this.activeScenario === 'vrp_burst_leak'
+        ? 68.4
+        : this.activeScenario === 'critical_low_pressure'
+          ? 6.8
+          : 34.5 + 1.8 * Math.sin(this.time * 0.6 + 1.1);
     for (const k of Object.keys(this.fieldState.sensorPulse)) {
       this.fieldState.sensorPulse[k] = Math.max(0, this.fieldState.sensorPulse[k] - dt * 1.5);
     }
