@@ -1,9 +1,9 @@
 # Build do simulador (Vite) + nginx na porta 8080 (exigência do Cloud Run).
 FROM node:22-alpine AS build
 WORKDIR /app
-COPY package.json package-lock.json ./
-# Vite está em devDependencies; não omitir no estágio de build.
-RUN npm ci --include=dev
+COPY package.json package-lock.json* ./
+# Vite está em devDependencies; instala tudo no estágio de build.
+RUN npm ci --include=dev || npm install --include=dev
 COPY . .
 RUN npm run build && ls dist/assets/*.js
 
