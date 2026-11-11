@@ -101,6 +101,10 @@ ul {
   grid-template-columns: minmax(0, 1fr);
 }
 
+.app.no-exec {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
 .app.focus .exec-strip,
 .app.focus .sim-footer {
   display: none;

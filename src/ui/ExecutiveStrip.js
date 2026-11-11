@@ -13,14 +13,18 @@ export function createExecutiveStrip(ctx) {
     if (mode === renderedMode) return;
     renderedMode = mode;
 
+    const appEl = document.getElementById('app');
+
     // Na Visão 1 (operacional / negócio), ocultamos a faixa de cartões técnicos do topo
     if (mode === 'operacional') {
       host.hidden = true;
+      if (appEl) appEl.classList.add('no-exec');
       if (ctx.sm) requestAnimationFrame(() => ctx.sm.resize());
       return;
     }
 
     host.hidden = false;
+    if (appEl) appEl.classList.remove('no-exec');
     const cards = EXECUTIVE_CARDS[mode] || EXECUTIVE_CARDS.plataforma;
     setChildren(
       host,
