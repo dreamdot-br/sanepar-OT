@@ -1,0 +1,21 @@
+{
+  "name": "sanepar-3d",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Simulador 3D conceitual de dados OT na Sanepar: operação de campo, gateway DHuO, Lakehouse GCP (RAW, Trusted, Refined) e consumo Looker (Engineering / Sanepar)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "start": "serve dist -l tcp://0.0.0.0:${PORT:-8080}",
+    "preview": "vite preview",
+    "check:sim": "node tools/sim-check.mjs"
+  },
+  "dependencies": {
+    "serve": "^14.2.6",
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "vite": "^8.3.4"
+  }
+}

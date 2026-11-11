@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Simulador 3D conceitual do produto de dados OT da Sanepar: operação de campo, gateway DHuO, Lakehouse GCP (RAW, Trusted, Refined) e painéis Looker (D0, D4, D6)." />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23090909'/%3E%3Crect x='3' y='3' width='10' height='10' fill='%23c51b88'/%3E%3C/svg%3E" />
+    <title>Sanepar 3D — Telemetria OT, DHuO e Lakehouse GCP · Engineering</title>
+    <style>
+      #file-help { display: none; min-height: 100vh; margin: 0; padding: 32px 24px; box-sizing: border-box; font-family: system-ui, "Segoe UI", sans-serif; background: #090909; color: #fcfcfc; line-height: 1.55; }
+      #file-help h1 { font-size: 1.35rem; margin: 0 0 8px; font-weight: 600; }
+      #file-help p { max-width: 42rem; margin: 0 0 12px; color: #9b9b9b; }
+      #file-help pre { background: #141414; border: 1px solid #2e2e2e; border-radius: 6px; padding: 14px 16px; overflow-x: auto; font-size: 13px; color: #2edce6; margin: 16px 0; }
+      #file-help strong { color: #fcfcfc; }
+      html.file-protocol #app { display: none !important; }
+      html.file-protocol #file-help { display: block; }
+    </style>
+    <script>
+      if (location.protocol === 'file:') document.documentElement.classList.add('file-protocol');
+    </script>
+  </head>
+  <body>
+    <div id="file-help" role="alert">
+      <h1>Abra pelo servidor local, não pelo arquivo</h1>
+      <p>
+        Você abriu esta página com <strong>file://</strong> (duplo clique no <code>index.html</code>).
+        Navegadores modernos <strong>bloqueiam módulos JavaScript</strong> nesse modo.
+      </p>
+      <p>No terminal, dentro da pasta <strong>Projeto/sanepar-3d</strong>:</p>
+      <pre>npm install
+npm run dev</pre>
+      <p>Depois abra o endereço que o Vite mostrar (em geral <strong>http://127.0.0.1:5173</strong>).</p>
+    </div>
+
+    <div class="app" id="app">
+      <header class="topbar" id="topbar"></header>
+
+      <section class="exec-strip" id="exec-strip" aria-label="Síntese executiva"></section>
+
+      <main class="stage" id="stage">
+        <div id="scene"></div>
+        <div class="stage-cams" id="stage-cams"></div>
+        <div class="stage-note" id="stage-note"></div>
+        <div class="popover-host" id="popover-host"></div>
+        <div class="night-banner" id="night-banner" hidden></div>
+        <div class="fallback" id="fallback" hidden>
+          <h2>Visualização 3D indisponível</h2>
+          <p>Este navegador não disponibilizou WebGL, ou o contexto gráfico foi perdido. A cena 3D não pode ser exibida, mas a simulação, os cartões executivos e os contadores continuam funcionando.</p>
+          <button class="btn primary" id="fallback-reload" type="button">Recarregar a página</button>
+        </div>
+      </main>
+
+      <footer class="sim-footer" id="sim-footer" aria-label="Contadores da simulação e legenda"></footer>
+    </div>
+    <noscript>
+      <p style="padding:24px;color:#fcfcfc;font-family:sans-serif">Este simulador precisa de JavaScript habilitado.</p>
+    </noscript>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
