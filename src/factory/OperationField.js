@@ -71,11 +71,14 @@ export class OperationField {
 
     this.lineMats = [];
     this.labelEls = {};
+    this.labelObjs = {};
     this.pulseRings = {};
     this.routes = {};
     this.waterMesh = null;
     this.impellers = [];
     this.cloudGroup = null;
+    this.telemetryLinesGroup = null;
+    this.packetsGroup = null;
 
     this._buildMacroDioramaAndRoads();
     this._buildRiverIntake();
@@ -96,9 +99,6 @@ export class OperationField {
 
   setVisible(v) {
     this.group.visible = !!v;
-    for (const el of Object.values(this.labelEls)) {
-      el.style.display = v ? '' : 'none';
-    }
     this._syncScenarioLabels();
   }
 
@@ -629,43 +629,44 @@ export class OperationField {
     );
   }
 
-  // ---- 10. Grande Nuvem no Céu: Gateway DHuO -> Lakehouse GCP --------------
+  // ---- 10. Nuvem Compacta no Céu: Gateway DHuO -> Lakehouse GCP ------------
   _buildSkyCloudDhuoGcp() {
-    const deck = { x: 2.5, y: 15.2, z: -6.5 };
-    const gw = { x: -2.2, y: 15.4, z: -6.5 };
-    const gcp = { x: 7.2, y: 15.4, z: -6.5 };
+    const deck = { x: 2.0, y: 15.8, z: -11.5 };
+    const gw = { x: 0.1, y: 15.9, z: -11.5 };
+    const gcp = { x: 3.9, y: 15.9, z: -11.5 };
 
     const root = new THREE.Group();
     this.cloudGroup = root;
 
+    // Nuvem bem mais compacta e discreta para não ocupar a tela
     const puffs = [
-      [-7.5, -0.3, 0.3, 3.0],
-      [-4.6, 0.15, -0.4, 3.8],
-      [-1.2, 0.4, 0.3, 3.6],
-      [2.2, 0.45, -0.3, 4.1],
-      [5.6, 0.2, 0.4, 3.7],
-      [8.4, -0.25, -0.2, 3.0],
+      [-3.1, -0.15, 0.1, 1.35],
+      [-1.8, 0.1, -0.2, 1.7],
+      [-0.3, 0.2, 0.15, 1.65],
+      [1.2, 0.22, -0.15, 1.85],
+      [2.6, 0.1, 0.18, 1.65],
+      [3.8, -0.12, -0.1, 1.3],
     ];
-    const puffGeo = new THREE.SphereGeometry(1, 20, 16);
+    const puffGeo = new THREE.SphereGeometry(1, 18, 14);
     for (const [px, py, pz, r] of puffs) {
       const m = new THREE.Mesh(puffGeo, M.cloudWhite);
       m.position.set(deck.x + px, deck.y + py, deck.z + pz);
-      m.scale.set(r * 1.35, r * 0.58, r * 0.95);
+      m.scale.set(r * 1.25, r * 0.52, r * 0.85);
       root.add(m);
     }
 
-    // Bloco Gateway DHuO (Magenta Engineering) na nuvem
-    root.add(at(box(4.6, 1.15, 2.5, M.engPink, { cast: false }), gw.x, gw.y + 0.45, gw.z));
+    // Bloco compacto Gateway DHuO (Magenta Engineering)
+    root.add(at(box(2.1, 0.58, 1.15, M.engPink, { cast: false }), gw.x, gw.y + 0.25, gw.z));
 
-    // Bloco Lakehouse GCP (Ciano Engineering) na nuvem
-    root.add(at(box(5.2, 1.25, 2.7, M.engCyan, { cast: false }), gcp.x, gcp.y + 0.5, gcp.z));
-    for (const dx of [-1.4, 0, 1.4]) {
+    // Bloco compacto Lakehouse GCP (Ciano Engineering)
+    root.add(at(box(2.4, 0.62, 1.25, M.engCyan, { cast: false }), gcp.x, gcp.y + 0.28, gcp.z));
+    for (const dx of [-0.65, 0, 0.65]) {
       root.add(
-        at(cylinder(0.45, 0.45, 0.65, M.white, 16, { cast: false }), gcp.x + dx, gcp.y + 1.42, gcp.z)
+        at(cylinder(0.22, 0.22, 0.34, M.white, 14, { cast: false }), gcp.x + dx, gcp.y + 0.75, gcp.z)
       );
     }
 
-    this.pulseRings.dhuo = this._makePulseRing(gw.x, gw.y + 1.2, gw.z, COLORS.engPink);
+    this.pulseRings.dhuo = this._makePulseRing(gw.x, gw.y + 0.62, gw.z, COLORS.engPink);
     root.add(this.pulseRings.dhuo);
 
     this.group.add(root);
@@ -673,31 +674,34 @@ export class OperationField {
     this._addLabel(
       root,
       'campo_dhuo_gw',
-      [deck.x, deck.y + 3.2, deck.z],
+      [deck.x, deck.y + 1.65, deck.z],
       'Nuvem · Gateway DHuO → Lakehouse GCP',
-      'Recepção contínua de toda a cidade · 6 fontes → southamerica-east1'
+      '6 fontes → southamerica-east1'
     );
   }
 
   // ---- 11. 14 Feixes Simultâneos de Telemetria Subindo da Cidade p/ Nuvem --
   _buildTelemetryRoutes() {
+    this.telemetryLinesGroup = new THREE.Group();
+    this.group.add(this.telemetryLinesGroup);
+
     const rtuPos = [-3.9, 5.85, 2.2];
-    const gwCloud = [-2.2, 15.8, -6.5];
-    const gcpCloud = [7.2, 15.9, -6.5];
+    const gwCloud = [0.1, 16.1, -11.5];
+    const gcpCloud = [3.9, 16.15, -11.5];
 
     const defs = {
       // 1. Captação Manancial -> Nuvem DHuO
       cap_cloud: {
-        pts: bezierArc([-25.9, 4.1, -15.5], [-16.0, 13.5, -12.0], gwCloud),
+        pts: bezierArc([-25.9, 4.1, -15.5], [-14.0, 14.0, -14.0], gwCloud),
         color: COLORS.engCyan,
       },
       // 2 & 3. Poços Tubulares -> Nuvem DHuO
       poco1_cloud: {
-        pts: bezierArc([-28.5, 1.5, -3.5], [-17.5, 11.8, -5.0], gwCloud),
+        pts: bezierArc([-28.5, 1.5, -3.5], [-15.5, 12.2, -8.0], gwCloud),
         color: COLORS.engCyan,
       },
       poco2_cloud: {
-        pts: bezierArc([-22.5, 1.5, 12.8], [-13.5, 11.5, 4.0], gwCloud),
+        pts: bezierArc([-22.5, 1.5, 12.8], [-11.5, 12.0, 1.0], gwCloud),
         color: COLORS.engCyan,
       },
       // 4. ETA -> Concentrador RTU
@@ -711,11 +715,11 @@ export class OperationField {
         color: COLORS.engCyan,
       },
       res2_cloud: {
-        pts: bezierArc([15.5, 6.9, -13.5], [7.5, 13.8, -10.5], gwCloud),
+        pts: bezierArc([15.5, 6.9, -13.5], [7.5, 14.0, -12.5], gwCloud),
         color: COLORS.engCyan,
       },
       res3_cloud: {
-        pts: bezierArc([27.5, 3.7, -4.2], [14.0, 13.5, -5.5], gwCloud),
+        pts: bezierArc([27.5, 3.7, -4.2], [14.0, 13.8, -8.5], gwCloud),
         color: COLORS.engCyan,
       },
       // 8 & 9. Elevatórias & Subestações de Energia (D6) -> RTU / Nuvem
@@ -724,7 +728,7 @@ export class OperationField {
         color: COLORS.engOrange,
       },
       eea2_cloud: {
-        pts: bezierArc([20.0, 2.1, -3.4], [9.5, 12.0, -5.0], gwCloud),
+        pts: bezierArc([20.0, 2.1, -3.4], [9.5, 12.5, -8.0], gwCloud),
         color: COLORS.engOrange,
       },
       // 10, 11, 12. Câmaras Subterrâneas de VRP (D4) -> RTU / Nuvem
@@ -733,33 +737,33 @@ export class OperationField {
         color: COLORS.engCyan,
       },
       vrp2_cloud: {
-        pts: bezierArc([3.6, -0.5, 12.6], [0.5, 10.5, 3.5], gwCloud),
+        pts: bezierArc([3.6, -0.5, 12.6], [1.5, 11.2, 1.0], gwCloud),
         color: COLORS.engCyan,
       },
       vrp3_cloud: {
-        pts: bezierArc([17.6, -0.5, 12.6], [8.5, 11.5, 3.5], gwCloud),
+        pts: bezierArc([17.6, -0.5, 12.6], [8.5, 12.0, 1.0], gwCloud),
         color: COLORS.engCyan,
       },
       // 13 & 14. Macromedidores DMC & Ligações Urbanas -> Nuvem
       dmc1_cloud: {
-        pts: bezierArc([-27.5, 1.2, 13.5], [-16.0, 11.2, 4.5], gwCloud),
+        pts: bezierArc([-27.5, 1.2, 13.5], [-14.0, 11.8, 2.0], gwCloud),
         color: COLORS.engCyan,
       },
       dmc2_cloud: {
-        pts: bezierArc([25.5, 0.4, 0.5], [12.5, 12.2, -2.5], gwCloud),
+        pts: bezierArc([25.5, 0.4, 0.5], [12.5, 12.8, -5.5], gwCloud),
         color: COLORS.engCyan,
       },
       // Uplink Concentrador RTU/Historian -> Gateway DHuO na Nuvem
       rtu_dhuo: {
-        pts: bezierArc(rtuPos, [-3.2, 12.2, -2.0], gwCloud, 32),
+        pts: bezierArc(rtuPos, [-2.0, 12.6, -4.5], gwCloud, 32),
         color: COLORS.engPink,
-        width: 2.8,
+        width: 2.4,
       },
       // Ponte interna na Nuvem: Gateway DHuO -> Lakehouse GCP
       dhuo_gcp: {
-        pts: bezierArc(gwCloud, [2.5, 17.5, -6.5], gcpCloud, 22),
+        pts: bezierArc(gwCloud, [2.0, 17.1, -11.5], gcpCloud, 20),
         color: COLORS.engCyan,
-        width: 3.2,
+        width: 2.6,
       },
     };
 
@@ -769,27 +773,30 @@ export class OperationField {
       geo.setPositions(d.pts.flatMap((p) => [p.x, p.y, p.z]));
       const mat = new LineMaterial({
         color: d.color,
-        linewidth: d.width || 1.8,
+        linewidth: d.width || 1.6,
         dashed: true,
         dashSize: 0.5,
         gapSize: 0.32,
         transparent: true,
-        opacity: 0.82,
+        opacity: 0.78,
       });
       const line = new Line2(geo, mat);
       line.computeLineDistances();
       this.lineMats.push(mat);
-      this.group.add(line);
+      this.telemetryLinesGroup.add(line);
     }
   }
 
   _buildPacketPool() {
-    const geo = new THREE.SphereGeometry(0.28, 12, 12);
+    this.packetsGroup = new THREE.Group();
+    this.group.add(this.packetsGroup);
+
+    const geo = new THREE.SphereGeometry(0.24, 12, 12);
     this.pktMeshes = [];
     for (let i = 0; i < 75; i++) {
       const m = new THREE.Mesh(geo, i % 3 === 0 ? M.glowPink : M.glowCyan);
       m.visible = false;
-      this.group.add(m);
+      this.packetsGroup.add(m);
       this.pktMeshes.push(m);
     }
     this._tmp = new THREE.Vector3();
@@ -825,6 +832,7 @@ export class OperationField {
     obj.position.set(...pos);
     parent.add(obj);
     this.labelEls[id] = el;
+    this.labelObjs[id] = obj;
   }
 
   // ---- 12. Efeitos 3D dos 5 Cenários de Falha & Inteligência Operacional ----
@@ -1021,8 +1029,8 @@ export class OperationField {
     for (let i = 0; i < 3; i++) {
       const el = document.createElement('div');
       el.className = 'story-3d-callout';
-      el.style.display = 'none';
       const obj = new CSS2DObject(el);
+      obj.visible = false;
       this.group.add(obj);
       this.storyCallouts.push({ el, obj });
     }
@@ -1032,30 +1040,41 @@ export class OperationField {
   _addScenarioBadge(id, parent, pos, kind, title, sub) {
     const el = document.createElement('div');
     el.className = `scenario-3d-badge ${kind}`;
-    el.style.display = 'none';
     el.innerHTML = `<strong>${title}</strong><span>${sub}</span>`;
     const obj = new CSS2DObject(el);
     obj.position.set(...pos);
+    obj.visible = false;
     parent.add(obj);
-    this.scenarioBadges[id] = el;
+    this.scenarioBadges[id] = { el, obj };
   }
 
   _syncScenarioLabels() {
     const vis = this.group.visible;
     const active = vis ? this.sim.activeScenario : null;
     const storyAct = vis && this.sim.story.active ? this.sim.story.currentAct : null;
+    const inDemo = !!(active || storyAct);
 
+    // 1) No modo demonstração, esconde os fluxos contínuos para a Cloud, a Nuvem e os labels técnicos padrão
+    if (this.telemetryLinesGroup) this.telemetryLinesGroup.visible = vis && !inDemo;
+    if (this.packetsGroup) this.packetsGroup.visible = vis && !inDemo;
+    if (this.cloudGroup) this.cloudGroup.visible = vis && !inDemo;
+
+    for (const obj of Object.values(this.labelObjs || {})) {
+      obj.visible = vis && !inDemo;
+    }
+
+    // 2) Grupos 3D e badges dos 5 cenários pontuais
     for (const [id, g] of Object.entries(this.scenarioGroups || {})) {
       const fromStory =
         (id === 'vrp_burst_leak' && storyAct?.leakEffect) ||
         (id === 'planned_maintenance' && storyAct?.maintEffect);
-      g.visible = id === active || !!fromStory;
+      g.visible = vis && (id === active || !!fromStory);
     }
-    for (const [id, el] of Object.entries(this.scenarioBadges || {})) {
-      el.style.display = id === active ? '' : 'none';
+    for (const [id, b] of Object.entries(this.scenarioBadges || {})) {
+      b.obj.visible = vis && id === active;
     }
 
-    // Atualiza callouts 3D da narrativa de negócio ativa
+    // 3) Callouts 3D das 2 Narrativas de Negócio (escondidos via obj.visible = false ao parar)
     const actId = storyAct ? storyAct.id : null;
     if (actId !== this._lastStoryActId) {
       this._lastStoryActId = actId;
@@ -1064,17 +1083,19 @@ export class OperationField {
         const sc = this.storyCallouts[i];
         const cDef = list[i];
         if (!cDef) {
-          sc.el.style.display = 'none';
+          sc.obj.visible = false;
           continue;
         }
         sc.el.className = `story-3d-callout ${cDef.kind || 'info'}`;
         sc.el.innerHTML = `<strong>${cDef.title}</strong><span>${cDef.sub}</span>`;
         sc.obj.position.set(...cDef.pos);
-        sc.el.style.display = '';
+        sc.obj.visible = true;
       }
     }
-    if (!vis && this.storyCallouts) {
-      for (const sc of this.storyCallouts) sc.el.style.display = 'none';
+    if ((!vis || !storyAct) && this.storyCallouts) {
+      for (const sc of this.storyCallouts) {
+        sc.obj.visible = false;
+      }
     }
   }
 

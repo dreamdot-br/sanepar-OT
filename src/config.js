@@ -139,5 +139,5 @@ export const CAMERA_PRESETS = {
   campo_manancial: { pos: [-34.0, 14.0, 18.0], target: [-22.0, 1.5, -10.0], fit: false, mode: 'operacional', label: 'Captação, Poços & ETA' },
   campo_reservatorio: { pos: [-14.0, 13.0, 16.0], target: [-6.0, 2.5, -10.0], fit: false, mode: 'operacional', label: 'Reservatórios & Elevatórias (D6)' },
   campo_rede: { pos: [8.0, 13.5, 28.0], target: [4.0, -0.5, 4.0], fit: false, mode: 'operacional', label: 'Bairros, VRPs & Subsolo (D4)' },
-  campo_gateway: { pos: [2.0, 22.0, 24.0], target: [2.0, 15.0, -6.0], fit: false, mode: 'operacional', label: 'Nuvem DHuO → Lakehouse GCP' },
+  campo_gateway: { pos: [2.0, 21.0, 10.0], target: [2.0, 15.8, -11.5], fit: false, mode: 'operacional', label: 'Nuvem DHuO → Lakehouse GCP' },
 };
