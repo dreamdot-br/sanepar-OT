@@ -1,7 +1,15 @@
-// Visão 2 — Diagrama de Arquitetura 2D Integrada e Animada (Zero sobreposição):
-// Estrutura de arquitetura corporativa:
-// [1. Ambiente Sanepar (Fontes)] ---> [Barramento Gateway DHuO] ---> [2. Plataforma Google Cloud: (Topo Transversal: Dataform & Parâmetros) + (Fluxo Medallion: 2.1 Ingestão -> 2.2 RAW -> 2.3 Trusted -> 2.4 Refined)] ---> [3. Consumo Analítico (Looker)]
-import { LAKEHOUSE_NODES, LAKEHOUSE_LINKS } from '../content/catalog.js';
+// Visão 2 — Plataforma de Dados (Lakehouse GCP) atualizada 100% com "Inventário Lakehouse SANEPAR 2.html":
+// - Placar oficial dos 8 indicadores (6 fontes, 25 RAW, 20 Trusted, 25 Refined, 40 regras, 8 jobs, 16 agendamentos, 7 secrets)
+// - Sub-aba 1: Diagrama de Arquitetura Integrada e Animada (sem sobreposição, com os 5 pilares transversais)
+// - Sub-aba 2: Catálogo de Objetos & Camadas Transversais (pesquisa instantânea nos objetos reais do GCP)
+// - Sub-aba 3: Relógio da Operação (3 coletores contínuos + linha do tempo SVG das 03:30 às 06:00 com os 14 agendamentos)
+import {
+  LAKEHOUSE_NODES,
+  LAKEHOUSE_LINKS,
+  INVENTORY_SCORE,
+  INVENTORY_PULSES,
+  INVENTORY_CROSS_PILLARS,
+} from '../content/catalog.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 
@@ -13,25 +21,66 @@ const KIND_HEX = {
 };
 
 const NODE_META = {
-  src_historian: { color: '#7ea865', tag: 'OT / SCADA' },
-  src_cadastros: { color: '#7ea865', tag: 'Corporativo & GIS' },
-  dhuo_gw: { color: '#c51b88', tag: 'API Gateway · Produção', isHub: true },
-  ing_quente: { color: '#e3a04a', tag: 'Streaming 120s + Job 1m' },
-  ing_reconciliacao: { color: '#e3a04a', tag: 'Backfill 03:45 / 04:45' },
-  ing_cadastros: { color: '#e3a04a', tag: 'Jobs Diários 05:00–05:20' },
-  gov_dataform: { color: '#bba0e2', tag: 'Dataform · 40 Assertions' },
-  ref_parametros: { color: '#5c8df6', tag: 'Regras · 05:35' },
-  raw_gcs: { color: '#8fa3bd', tag: 'GCS + Iceberg · 59 GB' },
-  raw_cadastro_org_op: { color: '#8fa3bd', tag: '10 Tabelas Iceberg' },
-  raw_geo: { color: '#8fa3bd', tag: '12 Camadas Iceberg' },
-  tru_telemetria: { color: '#2edce6', tag: '2,18 bi leituras · 275 GB' },
-  tru_cadastro_geo: { color: '#2edce6', tag: 'SCD2 + 12 Geo · 05:30' },
-  ref_pressao: { color: '#5c8df6', tag: 'Produto D4 · 05:40' },
-  ref_energia: { color: '#5c8df6', tag: 'Produto D6 · 05:40' },
-  use_d0: { color: '#c51b88', tag: 'Looker · Executivo' },
-  use_d4: { color: '#c51b88', tag: 'Looker · Rede (D4)' },
-  use_d6: { color: '#c51b88', tag: 'Looker · Energia (D6)' },
+  src_historian: { color: '#7ea865', tag: 'OT / SCADA · 2 Parques' },
+  src_cadastros: { color: '#7ea865', tag: 'BORG · BOPE · SDOA · ArcGIS' },
+  dhuo_gw: { color: '#c51b88', tag: 'Gateway DHuO · Produção', isHub: true },
+  ing_quente: { color: '#e3a04a', tag: 'Dataflow 120s + 2 Jobs (1m/10m)' },
+  ing_reconciliacao: { color: '#e3a04a', tag: 'cr-telemetria-backfill · 4 sch-*' },
+  ing_cadastros: { color: '#e3a04a', tag: '4 Jobs Diários + 4 sch-*' },
+  gov_dataform: { color: '#bba0e2', tag: 'Dataform (6 wf-*) + 40 Assertions' },
+  ref_parametros: { color: '#5c8df6', tag: 'ds_..._refined_parametro · 05:35' },
+  raw_gcs: { color: '#8fa3bd', tag: 'GCS (12 pastas) + 5 tb_* Telemetria' },
+  raw_cadastro_org_op: { color: '#8fa3bd', tag: 'cadastro (2) + org (4) + op (4)' },
+  raw_geo: { color: '#8fa3bd', tag: 'ds_org_sanepar_raw_geo · 12 tb_*' },
+  tru_telemetria: { color: '#2edce6', tag: 'ds_..._trusted_telemetria · 4 obj' },
+  tru_cadastro_geo: { color: '#2edce6', tag: 'cadastro SCD2 (4) + geo (12)' },
+  ref_pressao: { color: '#5c8df6', tag: 'pressao D4 (4) + mapas (5)' },
+  ref_energia: { color: '#5c8df6', tag: 'ds_..._refined_energia · 8 obj' },
+  use_d0: { color: '#c51b88', tag: 'Looker · Mapas & Ciclo' },
+  use_d4: { color: '#c51b88', tag: 'Looker · Painel D4 Pressão' },
+  use_d6: { color: '#c51b88', tag: 'Looker · Painel D6 Energia' },
 };
+
+const CLOCK_LANES = [
+  [
+    'Reconciliação (Ingestão)',
+    '#e3a04a',
+    [
+      ['sch-telemetria-rec-terceiros-busca', '03:45'],
+      ['sch-telemetria-rec-proprio-busca', '03:45'],
+      ['sch-telemetria-rec-terceiros-carga', '04:45'],
+      ['sch-telemetria-rec-proprio-carga', '04:45'],
+    ],
+  ],
+  [
+    'Cadastros → RAW (Iceberg)',
+    '#8fa3bd',
+    [
+      ['sch-metadata-discovery-daily', '05:00'],
+      ['sch-cadastro-borg-daily', '05:10'],
+      ['sch-arcgis-geo-daily', '05:10'],
+      ['sch-cadastro-operacional-daily', '05:20'],
+    ],
+  ],
+  [
+    'Trusted (Dataform)',
+    '#2edce6',
+    [
+      ['wf-sanepar-trusted-cadastro', '05:30'],
+      ['wf-sanepar-trusted-geo', '05:30'],
+    ],
+  ],
+  [
+    'Refined (Dataform)',
+    '#5c8df6',
+    [
+      ['wf-sanepar-refined-parametro', '05:35'],
+      ['wf-sanepar-refined-pressao-dia', '05:40'],
+      ['wf-sanepar-refined-geo', '05:40'],
+      ['wf-sanepar-refined-energia-dia', '05:40'],
+    ],
+  ],
+];
 
 export class PlatformDiagram2D {
   constructor(stageEl, sim, { onSelectItem = () => {} } = {}) {
@@ -43,6 +92,7 @@ export class PlatformDiagram2D {
     this.linkEls = {};
     this.pktEls = [];
     this.visible = false;
+    this.subTab = 'arquitetura'; // 'arquitetura' | 'catalogo' | 'relogio'
     this._needsLayout = true;
 
     this._buildDOM();
@@ -88,23 +138,47 @@ export class PlatformDiagram2D {
     this.root.className = 'arch2d-view';
     this.root.hidden = true;
 
-    // Cabeçalho compacto com legenda de fluxos
-    const header = document.createElement('div');
-    header.className = 'arch2d-header';
-    header.innerHTML = `
-      <div class="a2h-left">
-        <span class="a2h-tag">DIAGRAMA DE ARQUITETURA INTEGRADA · SANEPAR → GATEWAY DHuO → GCP LAKEHOUSE → LOOKER</span>
-      </div>
-      <div class="a2h-legend">
-        <span><i style="background:#2edce6"></i>Caminho Quente (120 s / 1 min)</span>
-        <span><i style="background:#e3a04a"></i>Batch & Reconciliação (03:45–05:20)</span>
-        <span><i style="background:#bba0e2"></i>Dataform & 40 Regras (05:30–05:40)</span>
-        <span><i style="background:#c51b88"></i>Consumo Looker (D0 / D4 / D6)</span>
-      </div>
-    `;
-    this.root.appendChild(header);
+    // 1. Barra superior: Placar Oficial de 8 KPIs do Inventário + Sub-abas da Frente 2
+    const topBar = document.createElement('div');
+    topBar.className = 'arch2d-topbar';
 
-    // Palco principal (CSS Grid de 4 macro-blocos + SVG overlay para setas e partículas)
+    const scoreStrip = document.createElement('div');
+    scoreStrip.className = 'arch2d-score-strip';
+    scoreStrip.innerHTML = INVENTORY_SCORE.map(
+      (s) => `
+      <div class="a2s-item">
+        <i style="background:${s.color}"></i>
+        <b>${s.num}</b>
+        <span>${s.label}</span>
+      </div>
+    `
+    ).join('');
+
+    const subTabs = document.createElement('div');
+    subTabs.className = 'arch2d-subtabs';
+    const tabDefs = [
+      ['arquitetura', 'A · Arquitetura Animada'],
+      ['catalogo', 'B · Catálogo & Transversais (GCP)'],
+      ['relogio', 'C · Relógio da Operação (03:45→05:40)'],
+    ];
+    this.subTabBtns = {};
+    for (const [id, label] of tabDefs) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'a2-tab-btn';
+      btn.setAttribute('aria-pressed', String(this.subTab === id));
+      btn.textContent = label;
+      btn.addEventListener('click', () => this.setSubTab(id));
+      subTabs.appendChild(btn);
+      this.subTabBtns[id] = btn;
+    }
+
+    topBar.append(scoreStrip, subTabs);
+    this.root.appendChild(topBar);
+
+    // =========================================================================
+    // PAINEL A: Diagrama de Arquitetura Integrada e Animada
+    // =========================================================================
     this.board = document.createElement('div');
     this.board.className = 'arch2d-canvas';
 
@@ -134,18 +208,17 @@ export class PlatformDiagram2D {
     this.svg.append(this.linksGroup, this.pktsGroup);
     this.board.appendChild(this.svg);
 
-    // === Layout estruturado em 4 Macro-Domínios (sem sobreposição!) ===
     const layoutGrid = document.createElement('div');
     layoutGrid.className = 'arch2d-domains';
 
-    // 1. Domínio Ambiente Sanepar (Fontes)
+    // Domínio 1: Fontes Sanepar
     const domSanepar = document.createElement('section');
     domSanepar.className = 'arch2d-domain';
     domSanepar.style.setProperty('--dom-color', '#7ea865');
     domSanepar.innerHTML = `
       <header class="ad-head">
-        <strong>1 · AMBIENTE SANEPAR</strong>
-        <span>Fontes OT / SCADA & Sistemas</span>
+        <strong>1 · FONTES SANEPAR (6)</strong>
+        <span>2 Historians + 4 Cadastros/GIS</span>
       </header>
     `;
     const saneparBody = document.createElement('div');
@@ -156,14 +229,14 @@ export class PlatformDiagram2D {
     );
     domSanepar.appendChild(saneparBody);
 
-    // 2. Barramento Central: Gateway DHuO (entre Fontes Sanepar e Ingestão GCP)
+    // Barramento Central: Gateway DHuO
     const domDhuo = document.createElement('section');
     domDhuo.className = 'arch2d-domain dhuo-bridge';
     domDhuo.style.setProperty('--dom-color', '#c51b88');
     domDhuo.innerHTML = `
       <header class="ad-head">
-        <strong>BARRAMENTO DHuO</strong>
-        <span>Fronteira única Sanepar ↔ GCP</span>
+        <strong>GATEWAY DHuO</strong>
+        <span>Produção · Fronteira Sanepar ↔ GCP</span>
       </header>
     `;
     const dhuoBody = document.createElement('div');
@@ -171,24 +244,37 @@ export class PlatformDiagram2D {
     dhuoBody.appendChild(this._makeNodeCard('dhuo_gw'));
     domDhuo.appendChild(dhuoBody);
 
-    // 3. Domínio Plataforma Google Cloud (southamerica-east1)
+    // Domínio 2: Plataforma Google Cloud (sanepar-dhuo-nonprd)
     const domGcp = document.createElement('section');
     domGcp.className = 'arch2d-domain gcp-domain';
     domGcp.style.setProperty('--dom-color', '#2edce6');
     domGcp.innerHTML = `
       <header class="ad-head">
-        <strong>2 · PLATAFORMA GOOGLE CLOUD (southamerica-east1)</strong>
-        <span>Ingestão Serverless · Lakehouse Medallion (RAW Iceberg → Trusted → Refined) · Governança Dataform</span>
+        <div class="ad-head-row">
+          <strong>2 · PLATAFORMA GOOGLE CLOUD · sanepar-dhuo-nonprd (southamerica-east1)</strong>
+          <div class="a2h-legend">
+            <span><i style="background:#2edce6"></i>Caminho Quente (120s/1min)</span>
+            <span><i style="background:#e3a04a"></i>Batch & Backfill (03:45–05:20)</span>
+            <span><i style="background:#bba0e2"></i>Dataform & 40 Regras (05:30–05:40)</span>
+            <span><i style="background:#c51b88"></i>Consumo Looker</span>
+          </div>
+        </div>
+        <span>RAW em Apache Iceberg (catálogo BigLake) · Trusted (20 obj) e Refined (25 obj) em BigQuery nativo · 7 imagens Artifact Registry · 3 repos GitLab</span>
       </header>
     `;
 
     const gcpContent = document.createElement('div');
     gcpContent.className = 'gcp-interior';
 
-    // 3A. Faixa Superior Transversal no GCP: Orquestração Dataform & Parâmetros de Negócio
+    // Barra Superior Transversal no GCP
     const govBar = document.createElement('div');
     govBar.className = 'gcp-gov-bar';
-    govBar.innerHTML = `<span class="ggb-label">2.0 Governança, Qualidade & Parâmetros Transversais</span>`;
+    govBar.innerHTML = `
+      <div class="ggb-meta">
+        <span class="ggb-label">ATRAVESSA TODAS AS CAMADAS</span>
+        <small>Dataform (2 releases + 6 wf-*) · 40 Assertions (ds_org_sanepar_governance) · 7 Secrets (sm_*) · 7 Imagens (Artifact Registry) · 3 Repos GitLab</small>
+      </div>
+    `;
     const govNodes = document.createElement('div');
     govNodes.className = 'ggb-nodes';
     govNodes.append(
@@ -198,28 +284,32 @@ export class PlatformDiagram2D {
     govBar.appendChild(govNodes);
     gcpContent.appendChild(govBar);
 
-    // 3B. Fluxo Medallion Horizontal (4 Sub-regiões lado a lado: Ingestão | RAW | Trusted | Refined)
+    // 4 Estágios Medallion
     const stagesRow = document.createElement('div');
     stagesRow.className = 'gcp-stages-row';
 
     const gcpStages = [
       {
-        title: '2.1 Ingestão & Agendamento',
+        title: '2.1 Ingestão (8 Jobs + 10 sch-*)',
+        foot: 'Grava Parquet e Iceberg sem regra',
         color: '#e3a04a',
         nodes: ['ing_quente', 'ing_reconciliacao', 'ing_cadastros'],
       },
       {
-        title: '2.2 Camada RAW (Iceberg)',
+        title: '2.2 RAW (25 tb_* Iceberg + GCS)',
+        foot: 'Dataflow grava Trusted direto; resto às 05:30',
         color: '#8fa3bd',
         nodes: ['raw_gcs', 'raw_cadastro_org_op', 'raw_geo'],
       },
       {
-        title: '2.3 Camada Trusted (BQ)',
+        title: '2.3 Trusted (20 Objetos BQ)',
+        foot: 'Dataform aplica regras às 05:35 e 05:40',
         color: '#2edce6',
         nodes: ['tru_telemetria', 'tru_cadastro_geo'],
       },
       {
-        title: '2.4 Camada Refined (Produtos)',
+        title: '2.4 Refined (25 Objetos BQ)',
+        foot: 'Os painéis leem só a Refined',
         color: '#5c8df6',
         nodes: ['ref_pressao', 'ref_energia'],
       },
@@ -235,21 +325,24 @@ export class PlatformDiagram2D {
       for (const nid of st.nodes) {
         listEl.appendChild(this._makeNodeCard(nid));
       }
-      boxEl.appendChild(listEl);
+      const footEl = document.createElement('div');
+      footEl.className = 'gsb-foot';
+      footEl.textContent = st.foot;
+      boxEl.append(listEl, footEl);
       stagesRow.appendChild(boxEl);
     }
 
     gcpContent.appendChild(stagesRow);
     domGcp.appendChild(gcpContent);
 
-    // 4. Domínio Consumo Analítico (Looker)
+    // Domínio 3: Consumo Looker
     const domConsumo = document.createElement('section');
     domConsumo.className = 'arch2d-domain';
     domConsumo.style.setProperty('--dom-color', '#c51b88');
     domConsumo.innerHTML = `
       <header class="ad-head">
-        <strong>3 · CONSUMO ANALÍTICO</strong>
-        <span>Painéis Estratégicos Looker</span>
+        <strong>3 · CONSUMO LOOKER</strong>
+        <span>Painéis, Séries & 5 Mapas</span>
       </header>
     `;
     const consumoBody = document.createElement('div');
@@ -268,6 +361,24 @@ export class PlatformDiagram2D {
     this.board.addEventListener('click', () => {
       this.onSelectItem(null, null);
     });
+
+    // =========================================================================
+    // PAINEL B: Catálogo de Objetos & 5 Pilares Transversais (Inventário GCP)
+    // =========================================================================
+    this.catalogPane = document.createElement('div');
+    this.catalogPane.className = 'arch2d-subpane';
+    this.catalogPane.hidden = true;
+    this._buildCatalogPane();
+    this.root.appendChild(this.catalogPane);
+
+    // =========================================================================
+    // PAINEL C: Relógio da Operação (Contínuo + Madrugada 03:30 → 06:00)
+    // =========================================================================
+    this.clockPane = document.createElement('div');
+    this.clockPane.className = 'arch2d-subpane';
+    this.clockPane.hidden = true;
+    this._buildClockPane();
+    this.root.appendChild(this.clockPane);
 
     this.stageEl.appendChild(this.root);
 
@@ -296,11 +407,159 @@ export class PlatformDiagram2D {
     }
   }
 
+  _buildCatalogPane() {
+    const crossHtml = INVENTORY_CROSS_PILLARS.map(
+      (p) => `
+      <div class="inv-cross-card" style="--p-color:${p.color}">
+        <div class="icc-head">
+          <strong>${p.title}</strong>
+          <span>${p.count}</span>
+        </div>
+        <div class="icc-sub">${p.sub}</div>
+        <ul>
+          ${p.items.map((it) => `<li>${it}</li>`).join('')}
+        </ul>
+      </div>
+    `
+    ).join('');
+
+    const nodesHtml = Object.values(LAKEHOUSE_NODES)
+      .map(
+        (n) => `
+      <div class="inv-node-box" data-search="${[n.title, n.sub, ...(n.objects || [])].join(' ').toLowerCase()}">
+        <div class="inb-head">
+          <strong>${n.title}</strong>
+          <span>${n.badge}</span>
+        </div>
+        <div class="inb-sub">${n.sub}</div>
+        <ul>
+          ${(n.objects || []).map((o) => `<li><code>${o}</code></li>`).join('')}
+        </ul>
+      </div>
+    `
+      )
+      .join('');
+
+    this.catalogPane.innerHTML = `
+      <div class="inv-pane-scroll">
+        <div class="inv-section-head">
+          <div>
+            <h3>Atravessa todas as camadas (Orquestração, Qualidade, Segurança, Imagens e Código)</h3>
+            <p>Componentes transversais lidos do GCP em 26/10/2026 (projeto <code>sanepar-dhuo-nonprd</code> + gateway DHuO de produção).</p>
+          </div>
+          <input type="search" class="inv-search" placeholder="Filtrar objeto (ex.: energia, scd2, 05:40, sm_, cr-)..." />
+        </div>
+        <div class="inv-cross-grid">${crossHtml}</div>
+        <div class="inv-section-head" style="margin-top:12px">
+          <div>
+            <h3>Catálogo detalhado de objetos por componente (ds_ · tb_ · ft_ · dm_ · vw_ · pm_ · cr- · sch- · wf-)</h3>
+          </div>
+        </div>
+        <div class="inv-nodes-grid">${nodesHtml}</div>
+      </div>
+    `;
+
+    const input = this.catalogPane.querySelector('.inv-search');
+    const boxes = [...this.catalogPane.querySelectorAll('.inv-node-box')];
+    input.addEventListener('input', () => {
+      const q = input.value.trim().toLowerCase();
+      for (const b of boxes) {
+        b.hidden = q.length > 0 && !b.dataset.search.includes(q);
+      }
+    });
+  }
+
+  _buildClockPane() {
+    const pulsesHtml = INVENTORY_PULSES.map(
+      (p) => `
+      <div class="inv-pulse-card" style="--p-color:${p.color}">
+        <div class="ipc-top">
+          <strong>${p.title}</strong>
+          <b>${p.freq}</b>
+        </div>
+        <code>${p.name}</code>
+        <small>${p.detail}</small>
+      </div>
+    `
+    ).join('');
+
+    // Gera SVG da linha do tempo das 03:30 às 06:00 (fiel ao Inventário 2.html)
+    const W = 1000;
+    const X0 = 310;
+    const X1 = 965;
+    const T0 = 210; // 03:30
+    const T1 = 360; // 06:00
+    const xOf = (hm) => {
+      const [h, m] = hm.split(':').map(Number);
+      return X0 + ((h * 60 + m - T0) / (T1 - T0)) * (X1 - X0);
+    };
+    const RH = 22;
+    let y = 38;
+    let gridSvg = '';
+    for (let t = T0; t <= T1; t += 15) {
+      const hm = `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
+      const xx = xOf(hm);
+      const major = t % 30 === 0;
+      gridSvg += `<line x1="${xx}" x2="${xx}" y1="26" y2="430" stroke="#253142" stroke-width="${major ? 1 : 0.6}" ${major ? '' : 'stroke-dasharray="2 4"'} />`;
+      if (major) {
+        gridSvg += `<text x="${xx}" y="18" text-anchor="middle" font-size="11.5" fill="#9ba7b8" font-family="monospace">${hm}</text>`;
+      }
+    }
+
+    let rowsSvg = '';
+    for (const [lane, color, evs] of CLOCK_LANES) {
+      const h = evs.length * RH + 24;
+      rowsSvg += `<rect x="8" y="${y}" width="${W - 16}" height="${h - 5}" rx="5" fill="#131c28" opacity="0.88" />`;
+      rowsSvg += `<rect x="8" y="${y}" width="4" height="${h - 5}" rx="2" fill="${color}" />`;
+      rowsSvg += `<text x="20" y="${y + 15}" font-size="11" font-weight="700" fill="${color}" letter-spacing="0.04em">${lane.toUpperCase()}</text>`;
+      let yy = y + 22;
+      for (const [name, hm] of evs) {
+        const cy = yy + RH / 2 - 2;
+        const xx = xOf(hm);
+        rowsSvg += `<text x="20" y="${cy + 4}" font-size="11" fill="#e6eef8" font-family="monospace">${name}</text>`;
+        rowsSvg += `<line x1="${X0 - 6}" x2="${xx - 7}" y1="${cy}" y2="${cy}" stroke="#253142" stroke-width="1" />`;
+        rowsSvg += `<circle cx="${xx}" cy="${cy}" r="5.5" fill="${color}" />`;
+        rowsSvg += `<text x="${xx + 10}" y="${cy + 4}" font-size="10.5" fill="#9ba7b8" font-family="monospace">${hm}</text>`;
+        yy += RH;
+      }
+      y += h + 4;
+    }
+
+    const finalSvg = `<svg viewBox="0 0 ${W} ${y + 8}" class="inv-clock-svg">${gridSvg.replace(/y2="430"/g, `y2="${y}"`)}${rowsSvg}</svg>`;
+
+    this.clockPane.innerHTML = `
+      <div class="inv-pane-scroll">
+        <div class="inv-pulse-grid">${pulsesHtml}</div>
+        <div class="inv-clock-box">${finalSvg}</div>
+        <div class="inv-clock-notes">
+          <div style="--c:#e3a04a"><b>03:45 → 04:45 · Reconciliação.</b> Relê os últimos 3 dias dos dois parques e grava só o que faltou. Termina 45 min antes de qualquer cálculo.</div>
+          <div style="--c:#8fa3bd"><b>05:00 → 05:20 · Cadastros.</b> Tags e equipamentos, estrutura organizacional (BORG), geografia (ArcGIS) e unidades operacionais (BOPE + SDOA) chegam à RAW.</div>
+          <div style="--c:#2edce6"><b>05:30 · Trusted.</b> Histórico de cadastro (versões SCD2) e 12 camadas geográficas tipadas, já com o retrato do dia.</div>
+          <div style="--c:#5c8df6"><b>05:35 → 05:40 · Refined.</b> Primeiro os parâmetros de regra de negócio (05:35); depois pressão (D4), geografia para mapas e energia (D6) às 05:40.</div>
+        </div>
+      </div>
+    `;
+  }
+
+  setSubTab(id) {
+    this.subTab = id;
+    for (const [k, btn] of Object.entries(this.subTabBtns)) {
+      btn.setAttribute('aria-pressed', String(k === id));
+    }
+    this.board.hidden = id !== 'arquitetura';
+    this.catalogPane.hidden = id !== 'catalogo';
+    this.clockPane.hidden = id !== 'relogio';
+    if (id === 'arquitetura') {
+      this._needsLayout = true;
+      requestAnimationFrame(() => this._recomputePaths());
+    }
+  }
+
   setVisible(v) {
     const vis = !!v;
     this.visible = vis;
     this.root.hidden = !vis;
-    if (vis) {
+    if (vis && this.subTab === 'arquitetura') {
       this._needsLayout = true;
       requestAnimationFrame(() => this._recomputePaths());
     }
@@ -313,7 +572,7 @@ export class PlatformDiagram2D {
   }
 
   _recomputePaths() {
-    if (!this.visible) return;
+    if (!this.visible || this.subTab !== 'arquitetura') return;
     const bRect = this.board.getBoundingClientRect();
     if (bRect.width < 10 || bRect.height < 10) return;
 
@@ -341,7 +600,6 @@ export class PlatformDiagram2D {
 
       let d;
       if (l.def.from === 'gov_dataform' && l.def.to === 'tru_cadastro_geo') {
-        // Dataform desce para Trusted Cadastro
         const x1 = a.cx;
         const y1 = a.bottom;
         const x2 = b.cx - b.w * 0.2;
@@ -349,7 +607,6 @@ export class PlatformDiagram2D {
         const my = (y1 + y2) / 2;
         d = `M ${x1} ${y1} C ${x1} ${my}, ${x2} ${my}, ${x2} ${y2}`;
       } else if (l.def.from === 'ref_parametros') {
-        // Parâmetros descem da barra superior para os produtos Refined
         const x1 = a.cx;
         const y1 = a.bottom;
         const x2 = b.cx;
@@ -357,7 +614,6 @@ export class PlatformDiagram2D {
         const my = (y1 + y2) / 2;
         d = `M ${x1} ${y1} C ${x1} ${my}, ${x2} ${my}, ${x2} ${y2}`;
       } else if (l.def.id === 'quente-tru') {
-        // Atalho streaming Dataflow -> Trusted Telemetria passando suavemente acima do card raw_gcs
         const x1 = a.right;
         const y1 = a.top + a.h * 0.3;
         const x2 = b.left;
@@ -365,7 +621,6 @@ export class PlatformDiagram2D {
         const liftY = Math.min(y1, y2) - 18;
         d = `M ${x1} ${y1} C ${x1 + 50} ${liftY}, ${x2 - 50} ${liftY}, ${x2} ${y2}`;
       } else {
-        // Fluxo natural esquerda -> direita entre componentes
         const x1 = a.right;
         const y1 = a.cy;
         const x2 = b.left;
@@ -385,7 +640,7 @@ export class PlatformDiagram2D {
   }
 
   update() {
-    if (!this.visible) return;
+    if (!this.visible || this.subTab !== 'arquitetura') return;
     if (this._needsLayout) this._recomputePaths();
 
     const nightPhase = this.sim.night.active ? this.sim.night.current : null;

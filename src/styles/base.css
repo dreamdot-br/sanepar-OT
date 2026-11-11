@@ -466,7 +466,7 @@ ul {
   font-family: var(--mono);
 }
 
-/* ---- Visão 2: Diagrama de Arquitetura 2D Integrada (Zero sobreposição) ---- */
+/* ---- Visão 2: Diagrama de Arquitetura 2D Integrada + Abas do Inventário ---- */
 .arch2d-view {
   position: absolute;
   inset: 0;
@@ -481,45 +481,120 @@ ul {
   overflow: hidden;
 }
 
-.arch2d-header {
+.arch2d-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 5px 12px;
   margin-bottom: 8px;
-  background: rgba(16, 22, 32, 0.92);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.arch2d-score-strip {
+  display: flex;
+  align-items: stretch;
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  overflow: hidden;
+  flex: 1;
+  min-width: 0;
+}
+
+.a2s-item {
+  flex: 1;
+  min-width: 90px;
+  background: rgba(16, 22, 32, 0.96);
+  padding: 4px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.a2s-item i {
+  display: block;
+  width: 16px;
+  height: 2.5px;
+  border-radius: 2px;
+  margin-bottom: 2px;
+}
+
+.a2s-item b {
+  font-family: var(--mono);
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.05;
+}
+
+.a2s-item span {
+  font-size: 9.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.arch2d-subtabs {
+  display: inline-flex;
+  background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  flex-wrap: wrap;
+  padding: 2px;
+  gap: 2px;
   flex-shrink: 0;
 }
 
-.a2h-tag {
-  font-size: 10.5px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
+.a2-tab-btn {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 5px 11px;
+  border-radius: 3px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.a2-tab-btn:hover {
+  color: var(--text);
+}
+
+.a2-tab-btn[aria-pressed='true'] {
+  background: #143642;
   color: var(--eng-cyan);
+  box-shadow: inset 0 0 0 1px var(--eng-cyan);
+}
+
+.ad-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .a2h-legend {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   flex-wrap: wrap;
-  font-size: 11px;
+  font-size: 10px;
   color: var(--muted);
 }
 
 .a2h-legend span {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
 .a2h-legend i {
-  width: 9px;
-  height: 9px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   display: inline-block;
 }
@@ -633,7 +708,7 @@ ul {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .gcp-gov-bar {
@@ -641,7 +716,7 @@ ul {
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  padding: 6px 10px;
+  padding: 5px 10px;
   background: rgba(26, 22, 42, 0.55);
   border: 1px dotted rgba(187, 160, 226, 0.48);
   border-left: 3px solid #bba0e2;
@@ -649,21 +724,32 @@ ul {
   flex-shrink: 0;
 }
 
+.ggb-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-width: 240px;
+}
+
 .ggb-label {
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: #bba0e2;
-  max-width: 150px;
-  line-height: 1.25;
+}
+
+.ggb-meta small {
+  font-size: 9px;
+  color: var(--muted);
+  line-height: 1.2;
 }
 
 .ggb-nodes {
   flex: 1;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 24px;
+  gap: 20px;
 }
 
 .gcp-stages-row {
@@ -671,7 +757,7 @@ ul {
   min-height: 0;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
+  gap: 14px;
   align-items: stretch;
 }
 
@@ -684,7 +770,7 @@ ul {
   border: 1px dotted rgba(135, 147, 166, 0.3);
   border-top: 2.5px solid var(--st-color, var(--eng-cyan));
   border-radius: 6px;
-  padding: 6px 8px 8px;
+  padding: 6px 8px 6px;
 }
 
 .gsb-title {
@@ -693,8 +779,8 @@ ul {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--st-color, var(--eng-cyan));
-  padding-bottom: 5px;
-  margin-bottom: 5px;
+  padding-bottom: 4px;
+  margin-bottom: 4px;
   border-bottom: 1px solid rgba(37, 49, 66, 0.55);
   flex-shrink: 0;
 }
@@ -705,7 +791,222 @@ ul {
   display: flex;
   flex-direction: column;
   justify-content: space-around;
-  gap: 8px;
+  gap: 6px;
+}
+
+.gsb-foot {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px dashed rgba(37, 49, 66, 0.55);
+  font-size: 9px;
+  color: var(--dim);
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* Sub-painéis B (Catálogo & Transversais) e C (Relógio da Operação) */
+.arch2d-subpane {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: rgba(14, 20, 29, 0.72);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.inv-pane-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 14px 20px;
+}
+
+.inv-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.inv-section-head h3 {
+  font-size: 12.5px;
+  color: var(--text);
+}
+
+.inv-section-head p {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.inv-search {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 5px 10px;
+  font-size: 12px;
+  width: 310px;
+  max-width: 100%;
+}
+
+.inv-cross-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.inv-cross-card {
+  background: rgba(20, 28, 40, 0.92);
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--p-color, var(--eng-cyan));
+  border-radius: 5px;
+  padding: 8px 10px;
+}
+
+.icc-head,
+.inb-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.icc-head strong,
+.inb-head strong {
+  font-size: 11.5px;
+  color: var(--text);
+}
+
+.icc-head span,
+.inb-head span {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--eng-cyan);
+}
+
+.icc-sub,
+.inb-sub {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--muted);
+  margin: 2px 0 6px;
+}
+
+.inv-cross-card ul,
+.inv-node-box ul {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.inv-cross-card li,
+.inv-node-box li {
+  font-size: 10.5px;
+  color: #cfd8e3;
+  line-height: 1.25;
+}
+
+.inv-node-box code {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: #a9d9e6;
+}
+
+.inv-nodes-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.inv-node-box {
+  background: rgba(18, 25, 36, 0.9);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 8px 10px;
+}
+
+/* Painel C: Relógio da Operação */
+.inv-pulse-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.inv-pulse-card {
+  background: rgba(20, 28, 40, 0.92);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--p-color, var(--eng-cyan));
+  border-radius: 5px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ipc-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.ipc-top strong {
+  font-size: 12px;
+}
+
+.ipc-top b {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--eng-cyan);
+}
+
+.inv-pulse-card code {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: #ff85d0;
+}
+
+.inv-pulse-card small {
+  font-size: 10.5px;
+  color: var(--muted);
+}
+
+.inv-clock-box {
+  background: rgba(15, 21, 30, 0.95);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 8px;
+  overflow-x: auto;
+}
+
+.inv-clock-svg {
+  display: block;
+  width: 100%;
+  min-width: 780px;
+  height: auto;
+  max-height: 310px;
+}
+
+.inv-clock-notes {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.inv-clock-notes div {
+  border-top: 2px solid var(--c, var(--eng-cyan));
+  padding-top: 6px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.inv-clock-notes b {
+  color: var(--text);
 }
 
 /* Cartões de componentes (sem posicionamento absoluto conflitante) */
