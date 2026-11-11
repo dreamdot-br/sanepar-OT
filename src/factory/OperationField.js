@@ -300,37 +300,48 @@ export class OperationField {
     );
   }
 
-  // ---- 5. Centros de Reservação & Castelos d'Água (2.606 uo_reservatorio) --
+  // ---- 5. Quatro Centros de Reservação Espalhados na Cidade (2.606 uo_reservatorio) --
   _buildDistributedReservoirs() {
     const root = new THREE.Group();
+    this.reservoirTanks = {};
 
-    // A) Centro de Reservação Principal (2 grandes tanques apoiados azuis junto à ETA)
-    for (const [rx, rz, r, h] of [
-      [-6.8, -14.2, 2.2, 3.8],
-      [-1.8, -14.2, 2.2, 3.8],
-    ]) {
-      root.add(at(cylinder(r + 0.3, r + 0.35, 0.35, M.concrete, 28), rx, 1.0, rz));
-      root.add(at(cylinder(r, r, h, M.tankBlue, 28), rx, 1.15 + h / 2, rz));
-      root.add(at(cylinder(r + 0.1, r + 0.1, 0.22, M.tankCap, 28), rx, 1.15 + h, rz));
-      root.add(at(cylinder(0.32, 0.32, 0.28, M.engCyan, 16), rx, 1.45 + h, rz));
+    // Tanque auxiliar junto ao R1
+    root.add(at(cylinder(2.3, 2.35, 0.35, M.concrete, 28), -1.8, 1.0, -14.2));
+    root.add(at(cylinder(2.05, 2.05, 3.6, M.tankBlue, 28), -1.8, 1.15 + 1.8, -14.2));
+    root.add(at(cylinder(2.15, 2.15, 0.22, M.tankCap, 28), -1.8, 1.15 + 3.6, -14.2));
+
+    // Os 4 Reservatórios principais monitorados nos 4 quadrantes da cidade
+    const tanks = [
+      { id: 'r1', x: -6.8, baseY: 0.8, z: -14.2, r: 2.3, h: 3.9 },
+      { id: 'r2', x: 15.5, baseY: 0.2, z: -13.5, r: 2.35, h: 4.0 },
+      { id: 'r3', x: -9.5, baseY: 0.0, z: 12.2, r: 2.15, h: 3.6 },
+      { id: 'r4', x: 26.5, baseY: 0.0, z: -3.8, r: 2.35, h: 4.0 },
+    ];
+
+    for (const t of tanks) {
+      root.add(at(cylinder(t.r + 0.3, t.r + 0.35, 0.35, M.concrete, 28), t.x, t.baseY + 0.18, t.z));
+      root.add(at(cylinder(t.r, t.r, t.h, M.tankBlue, 28), t.x, t.baseY + 0.35 + t.h / 2, t.z));
+      root.add(at(cylinder(t.r + 0.1, t.r + 0.1, 0.22, M.tankCap, 28), t.x, t.baseY + 0.35 + t.h, t.z));
+      root.add(at(cylinder(0.32, 0.32, 0.28, M.engCyan, 16), t.x, t.baseY + 0.65 + t.h, t.z));
+
+      // Visor vertical frontal de nível de água (individual por reservatório)
+      const visorH = t.h * 0.82;
+      root.add(at(box(0.55, visorH, 0.3, M.frame), t.x, t.baseY + 0.35 + t.h * 0.48, t.z + t.r + 0.04));
+
+      const wMat = M.waterFill.clone();
+      const wMesh = box(0.4, visorH * 0.92, 0.26, wMat, { cast: false });
+      at(wMesh, t.x, t.baseY + 0.35 + t.h * 0.45, t.z + t.r + 0.1);
+      root.add(wMesh);
+
+      this.reservoirTanks[t.id] = {
+        ...t,
+        visorH: visorH * 0.92,
+        waterMesh: wMesh,
+        waterMat: wMat,
+      };
     }
 
-    // Visor dinâmico no tanque principal
-    root.add(at(box(0.5, 3.1, 0.28, M.frame), -6.8, 2.9, -11.95));
-    this.waterMesh = box(0.36, 2.8, 0.24, M.waterFill, { cast: false });
-    at(this.waterMesh, -6.8, 2.75, -11.9);
-    root.add(this.waterMesh);
-
-    // B) Reservatório Elevado (Castelo d'Água) no Bairro Norte (x: 15.5, z: -13.5)
-    root.add(at(cylinder(0.85, 1.15, 4.2, M.concrete, 20), 15.5, 2.1, -13.5));
-    root.add(at(cylinder(1.85, 1.65, 2.4, M.tankBlue, 24), 15.5, 5.2, -13.5));
-    root.add(at(cylinder(1.92, 1.92, 0.2, M.tankCap, 24), 15.5, 6.5, -13.5));
-    root.add(at(cylinder(0.32, 0.32, 0.28, M.engCyan, 16), 15.5, 6.8, -13.5));
-
-    // C) Reservatório de Bairro no Setor Leste (x: 27.5, z: -4.2)
-    root.add(at(cylinder(2.1, 2.1, 3.2, M.tankBlue, 24), 27.5, 1.6, -4.2));
-    root.add(at(cylinder(2.18, 2.18, 0.2, M.tankCap, 24), 27.5, 3.3, -4.2));
-    root.add(at(cylinder(0.32, 0.32, 0.28, M.engCyan, 16), 27.5, 3.6, -4.2));
+    this.waterMesh = this.reservoirTanks.r1.waterMesh;
 
     this.pulseRings.reservatorio = this._makePulseRing(-6.8, 5.5, -14.2, COLORS.engCyan);
     root.add(this.pulseRings.reservatorio);
@@ -341,7 +352,7 @@ export class OperationField {
       root,
       'uo_reservatorio',
       [-4.3, 6.4, -14.2],
-      'Reservatórios & Castelos d’Água (LT)',
+      'Reservatórios Distribuídos (LT)',
       '2.606 reservatórios · 11.848 unidades SDOA'
     );
   }
@@ -1024,9 +1035,9 @@ export class OperationField {
       'Detectado em vw_..._pressao_ponto_atual na cota alta durante horário de pico'
     );
 
-    // Callouts dinâmicos das 2 Simulações de Negócio (estilo vídeo Energisa)
+    // Callouts dinâmicos das 2 Simulações de Negócio (5 slots para cobrir os 4 reservatórios + manobra)
     this.storyCallouts = [];
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 5; i++) {
       const el = document.createElement('div');
       el.className = 'story-3d-callout';
       const obj = new CSS2DObject(el);
@@ -1036,8 +1047,72 @@ export class OperationField {
     }
     this._lastStoryActId = null;
 
-    // 6. Viatura / Caminhonete da Sanepar para intervenção na Etapa 4
+    // 6. Viatura / Caminhonete da Sanepar para intervenção na Etapa 4 (Cenário 2)
     this._buildSaneparServiceTruck();
+    // 7. Adutora e Fluxo de Remanejamento entre Reservatórios R2 Norte -> R4 Leste (Cenário 1)
+    this._buildReservoirTransferEffect();
+  }
+
+  _buildReservoirTransferEffect() {
+    const gTransfer = new THREE.Group();
+    gTransfer.visible = false;
+
+    const pts = [
+      new THREE.Vector3(15.5, 1.4, -13.5),
+      new THREE.Vector3(17.5, 1.4, -8.5),
+      new THREE.Vector3(17.5, 1.4, -3.8),
+      new THREE.Vector3(26.5, 1.4, -3.8),
+    ];
+    this.transferPath = new Path3(pts);
+
+    const geo = new LineGeometry();
+    geo.setPositions(pts.flatMap((p) => [p.x, p.y, p.z]));
+    const mat = new LineMaterial({
+      color: 0x34d399,
+      linewidth: 4.0,
+      dashed: true,
+      dashSize: 0.65,
+      gapSize: 0.3,
+    });
+    const line = new Line2(geo, mat);
+    line.computeLineDistances();
+    this.lineMats.push(mat);
+    gTransfer.add(line);
+
+    // Anéis verdes indicando doador (R2 Norte) e receptor socorrido (R4 Leste)
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0x34d399,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.82,
+      depthWrite: false,
+    });
+    for (const [rx, rz] of [
+      [15.5, -13.5],
+      [26.5, -3.8],
+    ]) {
+      const r = new THREE.Mesh(new THREE.RingGeometry(2.7, 3.4, 32), ringMat);
+      r.rotation.x = -Math.PI / 2;
+      r.position.set(rx, 0.32, rz);
+      gTransfer.add(r);
+    }
+
+    // Esferas luminosas animadas representando a água sendo remanejada de R2 -> R4
+    const pGeo = new THREE.SphereGeometry(0.36, 14, 14);
+    const pMat = new THREE.MeshBasicMaterial({
+      color: 0x34d399,
+      transparent: true,
+      opacity: 0.95,
+    });
+    this.transferBoluses = [];
+    for (let i = 0; i < 8; i++) {
+      const m = new THREE.Mesh(pGeo, pMat);
+      gTransfer.add(m);
+      this.transferBoluses.push(m);
+    }
+
+    this.group.add(gTransfer);
+    this.transferGroup = gTransfer;
   }
 
   _buildSaneparServiceTruck() {
@@ -1199,13 +1274,48 @@ export class OperationField {
       this.cloudGroup.position.y = Math.sin(this.sim.time * 0.9) * 0.16;
     }
 
-    if (this.waterMesh) {
-      const lvl = this.sim.fieldState.reservoirLevel;
-      this.waterMesh.scale.y = Math.max(0.2, Math.min(1, lvl));
-      this.waterMesh.position.y = 1.35 + 1.4 * this.waterMesh.scale.y;
-      this.waterMesh.material.color.setHex(
-        this.sim.activeScenario === 'power_outage_cascade' ? 0xef4444 : COLORS.waterBright
-      );
+    // Atualiza nível e cor individual dos 4 Reservatórios (R1, R2, R3, R4)
+    const storyAct = this.sim.story.active ? this.sim.story.currentAct : null;
+    const tankSpec = storyAct?.tankLevels || null;
+    for (const [id, tk] of Object.entries(this.reservoirTanks || {})) {
+      let targetLvl = this.sim.fieldState.reservoirLevel;
+      let hexColor = COLORS.waterBright;
+
+      if (tankSpec && tankSpec[id]) {
+        const cfg = tankSpec[id];
+        // Interpola entre from e to ao longo do progresso da etapa
+        const prog = this.sim.story.actProgress || 0;
+        targetLvl = cfg.from + (cfg.to - cfg.from) * prog;
+        hexColor =
+          cfg.color === 'crit'
+            ? 0xef4444
+            : cfg.color === 'warn'
+              ? 0xfacc15
+              : cfg.color === 'ok'
+                ? 0x34d399
+                : COLORS.waterBright;
+      } else if (this.sim.activeScenario === 'power_outage_cascade' && id === 'r1') {
+        targetLvl = 0.28;
+        hexColor = 0xef4444;
+      }
+
+      const clamped = Math.max(0.14, Math.min(1, targetLvl));
+      tk.waterMesh.scale.y = clamped;
+      tk.waterMesh.position.y = tk.baseY + 0.42 + (tk.visorH * clamped) / 2;
+      tk.waterMat.color.setHex(hexColor);
+    }
+
+    // Animação do Remanejamento de Rede entre R2 Norte (sobra) -> R4 Leste (em queda)
+    const showTransfer = !!(storyAct && storyAct.transferEffect);
+    if (this.transferGroup) {
+      this.transferGroup.visible = showTransfer;
+      if (showTransfer && this.transferBoluses) {
+        for (let i = 0; i < this.transferBoluses.length; i++) {
+          const t = (this.sim.time * 0.45 + i / this.transferBoluses.length) % 1;
+          this.transferPath.at(t, this._tmp);
+          this.transferBoluses[i].position.copy(this._tmp);
+        }
+      }
     }
 
     // Se houver queda de energia, a bomba da EEA-01 para de girar
