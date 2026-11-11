@@ -1,7 +1,7 @@
 // Motor determinístico da simulação Sanepar OT & Lakehouse (JS puro, sem DOM nem Three.js).
 // A cena 3D e os contadores da interface apenas leem o estado exposto por esta classe.
 import { DT, SEED, SIM_RATES, NIGHT_PHASES } from '../config.js';
-import { FIELD_SCENARIOS } from '../content/catalog.js';
+import { FIELD_SCENARIOS, BUSINESS_STORIES } from '../content/catalog.js';
 import { EventBus } from './EventBus.js';
 
 const SAMPLE_TAGS = [
@@ -68,6 +68,14 @@ export class DataFlowSimulator {
     this.fieldPackets = [];
     this.lakePackets = [];
     this.activeScenario = null;
+    this.story = {
+      active: false,
+      storyId: null,
+      actIndex: 0,
+      actElapsed: 0,
+      actProgress: 0,
+      currentAct: null,
+    };
 
     this.fieldState = {
       reservoirLevel: 0.74,
@@ -133,9 +141,51 @@ export class DataFlowSimulator {
 
   setScenario(id) {
     const next = id && FIELD_SCENARIOS[id] ? id : null;
+    if (next && this.story.active) this.stopStory();
     this.activeScenario = this.activeScenario === next ? null : next;
     this.counters.sampleTag = this._nextSampleTag();
     this.bus.emit('scenario:change', this.activeScenario);
+  }
+
+  startStory(storyId) {
+    const st = BUSINESS_STORIES[storyId];
+    if (!st) return;
+    if (this.story.active && this.story.storyId === storyId) {
+      this.stopStory();
+      return;
+    }
+    this.activeScenario = null;
+    this.story.active = true;
+    this.story.storyId = storyId;
+    this.story.actIndex = 0;
+    this.story.actElapsed = 0;
+    this.story.actProgress = 0;
+    this.story.currentAct = st.acts[0];
+    if (!this.running) this.setRunning(true);
+    this.bus.emit('story:change', this.story);
+  }
+
+  stepStory(delta) {
+    if (!this.story.active) return;
+    const st = BUSINESS_STORIES[this.story.storyId];
+    if (!st) return;
+    const len = st.acts.length;
+    this.story.actIndex = (this.story.actIndex + delta + len) % len;
+    this.story.actElapsed = 0;
+    this.story.actProgress = 0;
+    this.story.currentAct = st.acts[this.story.actIndex];
+    this.bus.emit('story:change', this.story);
+  }
+
+  stopStory() {
+    if (!this.story.active) return;
+    this.story.active = false;
+    this.story.storyId = null;
+    this.story.actIndex = 0;
+    this.story.actElapsed = 0;
+    this.story.actProgress = 0;
+    this.story.currentAct = null;
+    this.bus.emit('story:change', this.story);
   }
 
   setRunning(v) {
@@ -296,6 +346,21 @@ export class DataFlowSimulator {
           this.night.completedRuns++;
           this.stopNightCycle();
         }
+      }
+    }
+
+    // Máquina de estados das Narrativas de Negócio na Cidade 3D (Auto-Loop contínuo)
+    if (this.story.active && this.story.currentAct) {
+      const st = BUSINESS_STORIES[this.story.storyId];
+      const act = this.story.currentAct;
+      this.story.actElapsed += dt;
+      this.story.actProgress = Math.min(1, this.story.actElapsed / act.durationSec);
+      if (this.story.actElapsed >= act.durationSec) {
+        this.story.actIndex = (this.story.actIndex + 1) % st.acts.length;
+        this.story.actElapsed = 0;
+        this.story.actProgress = 0;
+        this.story.currentAct = st.acts[this.story.actIndex];
+        this.bus.emit('story:change', this.story);
       }
     }
   }

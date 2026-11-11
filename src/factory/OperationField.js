@@ -1015,6 +1015,18 @@ export class OperationField {
       'SUBPRESSÃO EM PONTO CRÍTICO · 6,8 mca (< MÍN 10 mca)',
       'Detectado em vw_..._pressao_ponto_atual na cota alta durante horário de pico'
     );
+
+    // Callouts dinâmicos das 2 Narrativas de Negócio (estilo vídeo Energisa)
+    this.storyCallouts = [];
+    for (let i = 0; i < 3; i++) {
+      const el = document.createElement('div');
+      el.className = 'story-3d-callout';
+      el.style.display = 'none';
+      const obj = new CSS2DObject(el);
+      this.group.add(obj);
+      this.storyCallouts.push({ el, obj });
+    }
+    this._lastStoryActId = null;
   }
 
   _addScenarioBadge(id, parent, pos, kind, title, sub) {
@@ -1029,12 +1041,40 @@ export class OperationField {
   }
 
   _syncScenarioLabels() {
-    const active = this.group.visible ? this.sim.activeScenario : null;
+    const vis = this.group.visible;
+    const active = vis ? this.sim.activeScenario : null;
+    const storyAct = vis && this.sim.story.active ? this.sim.story.currentAct : null;
+
     for (const [id, g] of Object.entries(this.scenarioGroups || {})) {
-      g.visible = id === active;
+      const fromStory =
+        (id === 'vrp_burst_leak' && storyAct?.leakEffect) ||
+        (id === 'planned_maintenance' && storyAct?.maintEffect);
+      g.visible = id === active || !!fromStory;
     }
     for (const [id, el] of Object.entries(this.scenarioBadges || {})) {
       el.style.display = id === active ? '' : 'none';
+    }
+
+    // Atualiza callouts 3D da narrativa de negócio ativa
+    const actId = storyAct ? storyAct.id : null;
+    if (actId !== this._lastStoryActId) {
+      this._lastStoryActId = actId;
+      const list = storyAct?.callouts || [];
+      for (let i = 0; i < (this.storyCallouts || []).length; i++) {
+        const sc = this.storyCallouts[i];
+        const cDef = list[i];
+        if (!cDef) {
+          sc.el.style.display = 'none';
+          continue;
+        }
+        sc.el.className = `story-3d-callout ${cDef.kind || 'info'}`;
+        sc.el.innerHTML = `<strong>${cDef.title}</strong><span>${cDef.sub}</span>`;
+        sc.obj.position.set(...cDef.pos);
+        sc.el.style.display = '';
+      }
+    }
+    if (!vis && this.storyCallouts) {
+      for (const sc of this.storyCallouts) sc.el.style.display = 'none';
     }
   }
 
@@ -1046,6 +1086,12 @@ export class OperationField {
     if (!this.group.visible) return;
 
     this._syncScenarioLabels();
+
+    // Transição suave de iluminação Dia / Madrugada
+    const wantNight = !!(this.sim.story.active && this.sim.story.currentAct?.nightLight);
+    if (this.sm.lighting?.updateNightMode) {
+      this.sm.lighting.updateNightMode(wantNight, dt);
+    }
 
     if (this.cloudGroup) {
       this.cloudGroup.position.y = Math.sin(this.sim.time * 0.9) * 0.16;
@@ -1066,8 +1112,11 @@ export class OperationField {
       this.impellers[i].rotation.z += dt * 5.0 * (this.sim.running ? this.sim.speed : 0);
     }
 
-    // Animação do jato de vazamento subterrâneo (VRP burst)
-    if (this.sim.activeScenario === 'vrp_burst_leak' && this.leakJets) {
+    // Animação do jato de vazamento subterrâneo (VRP burst ou Narrativa 2)
+    const showLeak =
+      this.sim.activeScenario === 'vrp_burst_leak' ||
+      (this.sim.story.active && this.sim.story.currentAct?.leakEffect);
+    if (showLeak && this.leakJets) {
       for (let j = 0; j < this.leakJets.length; j++) {
         const s = 0.75 + 0.35 * Math.sin(this.sim.time * 9 + j * 1.4);
         this.leakJets[j].scale.set(1, s, 1);

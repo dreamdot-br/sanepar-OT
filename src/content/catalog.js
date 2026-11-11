@@ -976,3 +976,189 @@ export const LAKEHOUSE_LINKS = [
   { id: 'ref-d6', from: 'ref_energia', to: 'use_d6', kind: 'use' },
   { id: 'ref-e-d0', from: 'ref_energia', to: 'use_d0', kind: 'use' },
 ];
+
+// ---- Duas Narrativas Automáticas de Negócio na Cidade 3D (Auto-Loop estilo Energisa) ----
+// 100% em linguagem de negócio (sem jargão técnico de banco de dados/algoritmo na tela).
+export const BUSINESS_STORIES = {
+  demanda_24h: {
+    id: 'demanda_24h',
+    shortLabel: '▶ História 1 · Antecipando a Demanda 24h',
+    title: 'Narrativa 1 · Antecipando o Consumo da Cidade nas Próximas 24 Horas',
+    acts: [
+      {
+        id: 'd1_manha',
+        durationSec: 11,
+        clock: '07:00',
+        weather: 'Manhã · Dia Útil',
+        status: 'ABASTECIMENTO OK',
+        statusKind: 'ok',
+        nightLight: false,
+        cameraPreset: 'campo_geral',
+        banner: 'PREVISÃO 24H ATIVA · A operação já sabe hoje quanto cada bairro vai consumir até amanhã',
+        headline: '1 · Cidade despertando: cada dia tem um comportamento próprio',
+        narrative:
+          'Um dia útil, um fim de semana ou uma véspera de feriado mudam completamente o ritmo de consumo da cidade. Em vez de olhar só para o passado, a operação enxerga com 24 horas de antecedência a demanda esperada de cada região.',
+        kpis: [
+          ['Horizonte de Antecipação', 'Próximas 24 horas (hora a hora)'],
+          ['Regiões Monitoradas', '803 grandes medidores de distribuição'],
+          ['Segurança Operacional', 'Trava automática contra leituras distorcidas'],
+        ],
+        callouts: [
+          { pos: [-4.3, 6.8, -14.2], kind: 'ok', title: 'RESERVATÓRIOS · 78%', sub: 'Volume preparado para a curva do dia' },
+          { pos: [15.5, 8.2, -13.5], kind: 'info', title: 'BAIRRO NORTE · PREVISÃO 24H', sub: 'Demanda dentro da curva esperada para quarta-feira' },
+        ],
+      },
+      {
+        id: 'd2_tarde_desvio',
+        durationSec: 12,
+        clock: '14:15',
+        weather: 'Tarde Quente · Véspera de Feriado',
+        status: 'CONSUMO ACIMA DO ESPERADO',
+        statusKind: 'warn',
+        nightLight: false,
+        cameraPreset: 'campo_rede',
+        banner: 'DESVIO DETECTADO ÀS 14H · Consumo no Setor Leste subiu +28% acima do esperado para o horário',
+        headline: '2 · Desvio percebido à tarde, horas antes de faltar água à noite',
+        narrative:
+          'No início da tarde, o consumo em parte da cidade descola da curva prevista para as próximas horas. Sem essa visão futura, o problema só seria notado às 19h, quando os reservatórios já estivessem vazios.',
+        kpis: [
+          ['Alerta Antecipado', '5 horas antes do pico noturno'],
+          ['Precisão na Escolha', 'Usa sempre a referência mais assertiva de cada bairro'],
+          ['Impacto no Cliente', 'Zero interrupção percebida nos imóveis'],
+        ],
+        callouts: [
+          { pos: [18.2, 4.2, 11.4], kind: 'warn', title: 'SETOR LESTE · CONSUMO +28%', sub: 'Acima da curva prevista para as 14h' },
+          { pos: [5.5, 8.5, 4.8], kind: 'warn', title: 'HOSPITAL MUNICIPAL · MONITORADO', sub: 'Prioridade máxima de abastecimento contínuo' },
+        ],
+      },
+      {
+        id: 'd3_pico_protegido',
+        durationSec: 12,
+        clock: '19:00',
+        weather: 'Noite · Horário de Pico',
+        status: 'MANOBRA PREVENTIVA CONCLUÍDA',
+        statusKind: 'ok',
+        nightLight: true,
+        cameraPreset: 'campo_reservatorio',
+        banner: 'PICO DAS 19H SUPERADO · Reforço preventivo mantém Hospital e Bairros Altos 100% abastecidos',
+        headline: '3 · Decisão antecipada: reservação reforçada antes do horário crítico',
+        narrative:
+          'Com o aviso recebido à tarde, o centro de operações reforçou a reservação antes do horário de pico. O Hospital Municipal e os bairros mais altos atravessam a noite com pressão normal e sem reclamações no atendimento.',
+        kpis: [
+          ['Hospital & Serviços Críticos', '100% abastecidos no pico das 19h'],
+          ['Reclamações Evitadas', 'Queda de chamados por falta d’água em cota alta'],
+          ['Eficiência de Energia', 'Bombeamento planejado fora do aperto emergencial'],
+        ],
+        callouts: [
+          { pos: [-4.3, 6.8, -14.2], kind: 'ok', title: 'RESERVAÇÃO ESTÁVEL · 64%', sub: 'Reforço preventivo absorveu o pico das 19h' },
+          { pos: [-23.5, 6.6, 12.2], kind: 'ok', title: 'IMÓVEIS EM COTA ALTA · ÁGUA NORMAL', sub: 'Pressão preservada mesmo no horário crítico' },
+        ],
+      },
+    ],
+  },
+
+  vazamento_madrugada: {
+    id: 'vazamento_madrugada',
+    shortLabel: '▶ História 2 · Caça ao Vazamento Invisível',
+    title: 'Narrativa 2 · Identificando Vazamentos Ocultos no Silêncio da Madrugada',
+    acts: [
+      {
+        id: 'v1_silencio',
+        durationSec: 11,
+        clock: '02:30',
+        weather: 'Madrugada · Cidade Dormindo',
+        status: 'VIGILÂNCIA NOTURNA (22H–06H)',
+        statusKind: 'info',
+        nightLight: true,
+        cameraPreset: 'campo_geral',
+        banner: '02:30 DA MADRUGADA · Casas dormindo e torneiras fechadas: o momento em que a rede revela perdas ocultas',
+        headline: '1 · O silêncio da madrugada: quando quase ninguém consome água',
+        narrative:
+          'Entre 22h e 06h o consumo das famílias cai ao mínimo. Se muita água continua entrando num bairro toda madrugada, ela provavelmente está escapando por baixo da terra — mesmo que o asfalto na superfície esteja completamente seco.',
+        kpis: [
+          ['Janela Analisada', 'Toda madrugada (22h às 06h)'],
+          ['Foco da Busca', 'Vazamentos ocultos que não afloram na rua'],
+          ['Histórico Aprendido', '6 meses do comportamento noturno de cada bairro'],
+        ],
+        callouts: [
+          { pos: [-23.5, 6.4, 12.2], kind: 'info', title: 'RESIDÊNCIAS DORMINDO', sub: 'Consumo doméstico próximo de zero às 02:30' },
+          { pos: [5.5, 8.2, 4.8], kind: 'info', title: 'CENTRO URBANO EM SILÊNCIO', sub: 'Monitorando o fluxo mínimo sob as avenidas' },
+        ],
+      },
+      {
+        id: 'v2_quinta_noite',
+        durationSec: 13,
+        clock: '03:40',
+        weather: 'Madrugada · 5ª Noite Seguida',
+        status: 'VAZAMENTO OCULTO DETECTADO',
+        statusKind: 'crit',
+        nightLight: true,
+        cameraPreset: 'campo_rede',
+        leakEffect: true,
+        banner: 'ALERTA PERSISTENTE · 5 de 7 madrugadas com vazão +38% acima do normal sob a Avenida Central',
+        headline: '2 · Cinco madrugadas seguidas acima do normal: água escapando no subsolo',
+        narrative:
+          'Uma única noite alta pode ser um evento isolado. Mas quando o mesmo setor registra vazão mínima mais de 30% acima do normal em 5 das últimas 7 madrugadas, o sistema identifica um vazamento subterrâneo já em curso.',
+        kpis: [
+          ['Persistência Confirmada', '5 das últimas 7 madrugadas acima do normal'],
+          ['Volume Escapando', '+38% acima do consumo mínimo esperado'],
+          ['Visibilidade', 'Invisível na superfície · Detectado pelo dado'],
+        ],
+        callouts: [
+          { pos: [3.6, 3.6, 12.6], kind: 'crit', title: 'VAZAMENTO OCULTO NO SUBSOLO', sub: '5 de 7 madrugadas acima do normal (+38%)' },
+          { pos: [-13.6, 3.2, 11.4], kind: 'ok', title: 'BAIRRO OESTE · NORMAL', sub: 'Mínima noturna dentro do padrão histórico' },
+        ],
+      },
+      {
+        id: 'v3_filtro_manobra',
+        durationSec: 12,
+        clock: '05:30',
+        weather: 'Amanhecer · Qualificação',
+        status: 'FALSOS ALARMES FILTRADOS (-20%)',
+        statusKind: 'info',
+        nightLight: false,
+        cameraPreset: 'campo_rede',
+        leakEffect: true,
+        maintEffect: true,
+        banner: 'INTELIGÊNCIA DE CAMPO · Manobra operacional no Bairro Norte é filtrada; equipe só vai onde é vazamento real',
+        headline: '3 · Separando vazamento real de manobra da própria operação',
+        narrative:
+          'Quando metade de uma região sobe junta por causa de uma manobra de rede ou feriado, o sistema reconhece sozinho e não gera alarme falso. Isso reduz em cerca de 20% o envio desnecessário de equipes para a rua.',
+        kpis: [
+          ['Redução de Falsos Alertas', '−20% de deslocamentos improdutivos'],
+          ['Filtro de Manobra', 'Ignora quando a zona inteira subiu junta por manobra'],
+          ['Foco da Equipe', '100% concentrada nos pontos de perda real'],
+        ],
+        callouts: [
+          { pos: [5.4, 8.2, 4.5], kind: 'info', title: 'MANOBRA DE REDE · ALARME SUPRIMIDO', sub: 'Região subiu junta · Equipe NÃO precisa ir a campo' },
+          { pos: [3.6, 3.6, 12.6], kind: 'crit', title: 'SUSPEITA CONFIRMADA · PRIORIDADE 1', sub: 'Comportamento isolado de vazamento persistente' },
+        ],
+      },
+      {
+        id: 'v4_reparo_preventivo',
+        durationSec: 11,
+        clock: '06:00',
+        weather: 'Manhã · Despacho de Equipe',
+        status: 'EQUIPE DIRECIONADA AO LOCAL',
+        statusKind: 'ok',
+        nightLight: false,
+        cameraPreset: 'campo_geral',
+        leakEffect: true,
+        banner: '06:00 DA MANHÃ · Ponto sinalizado no painel para reparo antes de romper o asfalto e afetar o trânsito',
+        headline: '4 · Reparo antes da cratera: economia de água, tempo e imagem pública',
+        narrative:
+          'Logo às 06:00 da manhã, a operação recebe a indicação clara de onde atuar. O reparo é feito de forma planejada antes que a tubulação estoure na avenida, evitando desperdício de água tratada, transtorno no trânsito e desgaste com a população.',
+        kpis: [
+          ['Entrega para Decisão', 'Todos os dias às 06:00 da manhã'],
+          ['Preservação Urbana', 'Atuação antes de abrir cratera na via pública'],
+          ['Combate a Perdas', 'Recuperação de água já tratada e bombeada'],
+        ],
+        callouts: [
+          { pos: [3.6, 3.8, 12.6], kind: 'ok', title: 'POSSÍVEL VAZAMENTO SINALIZADO', sub: 'Equipe de busca ativa direcionada ao setor exato' },
+          { pos: [5.5, 8.2, 4.8], kind: 'ok', title: 'TRÂNSITO E COMÉRCIO PRESERVADOS', sub: 'Sem rompimento grave na avenida principal' },
+        ],
+      },
+    ],
+  },
+};
+
