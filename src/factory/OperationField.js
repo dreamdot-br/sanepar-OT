@@ -1024,7 +1024,7 @@ export class OperationField {
       'Detectado em vw_..._pressao_ponto_atual na cota alta durante horário de pico'
     );
 
-    // Callouts dinâmicos das 2 Narrativas de Negócio (estilo vídeo Energisa)
+    // Callouts dinâmicos das 2 Simulações de Negócio (estilo vídeo Energisa)
     this.storyCallouts = [];
     for (let i = 0; i < 3; i++) {
       const el = document.createElement('div');
@@ -1035,6 +1035,87 @@ export class OperationField {
       this.storyCallouts.push({ el, obj });
     }
     this._lastStoryActId = null;
+
+    // 6. Viatura / Caminhonete da Sanepar para intervenção na Etapa 4
+    this._buildSaneparServiceTruck();
+  }
+
+  _buildSaneparServiceTruck() {
+    const truck = new THREE.Group();
+    truck.visible = false;
+
+    // Chassi e carroceria branca com faixa azul Sanepar
+    truck.add(at(box(2.3, 0.48, 1.15, M.white), 0, 0.44, 0));
+    truck.add(at(box(2.34, 0.16, 1.18, M.tankBlue), 0, 0.44, 0));
+    // Cabine frontal (+X é a frente do veículo)
+    truck.add(at(box(0.95, 0.58, 1.1, M.white), 0.42, 0.92, 0));
+    // Para-brisa azul-claro
+    truck.add(at(box(0.12, 0.42, 0.96, M.waterStream), 0.88, 0.94, 0));
+    // Tubos azuis sobressalentes na caçamba traseira
+    truck.add(
+      buildPipeRun(
+        [
+          [-1.05, 0.78, -0.25],
+          [-0.15, 0.78, -0.25],
+        ],
+        0.1,
+        M.pipeWater
+      )
+    );
+    truck.add(
+      buildPipeRun(
+        [
+          [-1.05, 0.78, 0.25],
+          [-0.15, 0.78, 0.25],
+        ],
+        0.1,
+        M.pipeYellow
+      )
+    );
+
+    // 4 Rodas
+    for (const [wx, wz] of [
+      [-0.68, -0.58],
+      [-0.68, 0.58],
+      [0.68, -0.58],
+      [0.68, 0.58],
+    ]) {
+      const wheel = cylinder(0.24, 0.24, 0.18, M.asphalt, 14);
+      wheel.rotation.x = Math.PI / 2;
+      at(wheel, wx, 0.24, wz);
+      truck.add(wheel);
+    }
+
+    // Giroflex laranja/âmbar no teto da cabine
+    this.truckBeacon = cylinder(0.16, 0.16, 0.18, M.engOrange, 14);
+    at(this.truckBeacon, 0.42, 1.3, 0);
+    truck.add(this.truckBeacon);
+
+    this.group.add(truck);
+    this.serviceTruck = truck;
+
+    // Trajeto da viatura pelas avenidas até o local do vazamento (Avenida Sul, próximo a x = 2.4, z = 8.8)
+    this.truckPath = new Path3([
+      [-17.0, 0.14, -6.5],
+      [-17.0, 0.14, 0.5],
+      [-1.5, 0.14, 0.5],
+      [-1.5, 0.14, 8.8],
+      [2.4, 0.14, 8.8],
+    ]);
+    this._truckPos = new THREE.Vector3();
+    this._truckLook = new THREE.Vector3();
+
+    // Cones de sinalização posicionados quando a viatura chega ao local
+    this.workCones = new THREE.Group();
+    this.workCones.visible = false;
+    for (const [cx, cz] of [
+      [0.6, 9.8],
+      [2.2, 10.1],
+      [4.0, 10.1],
+    ]) {
+      this.workCones.add(at(cylinder(0.03, 0.22, 0.55, M.engOrange, 12), cx, 0.4, cz));
+    }
+    this.group.add(this.workCones);
   }
 
   _addScenarioBadge(id, parent, pos, kind, title, sub) {
@@ -1133,14 +1214,53 @@ export class OperationField {
       this.impellers[i].rotation.z += dt * 5.0 * (this.sim.running ? this.sim.speed : 0);
     }
 
-    // Animação do jato de vazamento subterrâneo (VRP burst ou Narrativa 2)
+    // Animação da Viatura da Sanepar (Etapa 4) e contenção progressiva do vazamento
+    const hasTruck = !!(this.sim.story.active && this.sim.story.currentAct?.truckDispatch);
+    if (this.serviceTruck) {
+      this.serviceTruck.visible = hasTruck;
+      if (hasTruck) {
+        const prog = this.sim.story.actProgress || 0;
+        // Nos primeiros 45% da etapa (9s de 20s), a viatura se desloca até o local; depois estaciona
+        const driveT = Math.min(1, prog / 0.45);
+        this.truckPath.at(driveT, this._truckPos);
+        this.serviceTruck.position.copy(this._truckPos);
+
+        if (driveT < 0.995) {
+          this.truckPath.at(Math.min(1, driveT + 0.02), this._truckLook);
+          const dx = this._truckLook.x - this._truckPos.x;
+          const dz = this._truckLook.z - this._truckPos.z;
+          if (Math.hypot(dx, dz) > 1e-4) {
+            this.serviceTruck.rotation.y = Math.atan2(-dz, dx);
+          }
+        } else {
+          this.serviceTruck.rotation.y = 0;
+        }
+
+        if (this.truckBeacon) {
+          this.truckBeacon.scale.setScalar(0.9 + 0.35 * Math.abs(Math.sin(this.sim.time * 12)));
+        }
+        if (this.workCones) {
+          this.workCones.visible = driveT >= 0.98;
+        }
+      } else if (this.workCones) {
+        this.workCones.visible = false;
+      }
+    }
+
+    // Animação do jato de vazamento subterrâneo (diminui até estancar após chegada da equipe na Etapa 4)
     const showLeak =
       this.sim.activeScenario === 'vrp_burst_leak' ||
       (this.sim.story.active && this.sim.story.currentAct?.leakEffect);
     if (showLeak && this.leakJets) {
+      let attenuate = 1;
+      if (hasTruck) {
+        const prog = this.sim.story.actProgress || 0;
+        // A partir de 50% da etapa (equipe já estacionada), o vazamento vai sendo estancado até 15%
+        attenuate = prog < 0.5 ? 1 : Math.max(0.12, 1 - ((prog - 0.5) / 0.45) * 0.88);
+      }
       for (let j = 0; j < this.leakJets.length; j++) {
-        const s = 0.75 + 0.35 * Math.sin(this.sim.time * 9 + j * 1.4);
-        this.leakJets[j].scale.set(1, s, 1);
+        const s = (0.75 + 0.35 * Math.sin(this.sim.time * 9 + j * 1.4)) * attenuate;
+        this.leakJets[j].scale.set(attenuate, s, attenuate);
       }
     }
 

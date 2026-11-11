@@ -87,7 +87,7 @@ export function createStageOverlay(ctx) {
 
       setChildren(
         scenBarHost,
-        h('span', { class: 'sb-label pink-lbl' }, 'Narrativas de Negócio (Auto-Loop):'),
+        h('span', { class: 'sb-label pink-lbl' }, 'Simulações de Negócio (Auto-Loop):'),
         Object.values(BUSINESS_STORIES).map((st) =>
           h(
             'button',
@@ -235,7 +235,7 @@ export function createStageOverlay(ctx) {
           h(
             'div',
             null,
-            h('span', { class: 'sbc-eyebrow' }, `${st.title} · ATO ${ctx.sim.story.actIndex + 1} DE ${st.acts.length} (AUTO-LOOP)`),
+            h('span', { class: 'sbc-eyebrow' }, `${st.title} · ETAPA ${ctx.sim.story.actIndex + 1} DE ${st.acts.length} (AUTO-LOOP)`),
             h('h3', null, act.headline)
           ),
           h(
@@ -246,7 +246,7 @@ export function createStageOverlay(ctx) {
               {
                 type: 'button',
                 class: 'btn sbc-btn',
-                title: 'Ato anterior',
+                title: 'Etapa anterior',
                 onclick: () => ctx.sim.stepStory(-1),
               },
               '◀'
@@ -256,7 +256,7 @@ export function createStageOverlay(ctx) {
               {
                 type: 'button',
                 class: 'btn sbc-btn',
-                title: 'Próximo ato',
+                title: 'Próxima etapa',
                 onclick: () => ctx.sim.stepStory(1),
               },
               '▶'
@@ -266,7 +266,7 @@ export function createStageOverlay(ctx) {
               {
                 type: 'button',
                 class: 'tp-close',
-                title: 'Sair da narrativa',
+                title: 'Sair da simulação',
                 onclick: () => triggerStory(null),
               },
               '×'
@@ -312,7 +312,7 @@ export function createStageOverlay(ctx) {
     if (ctx.view.id === 'operacional') {
       camsHost.hidden = false;
       noteHost.textContent =
-        'Maquete 3D de Negócio · inicie uma das 2 Narrativas em Auto-Loop no topo para apresentação contínua';
+        'Maquete 3D de Operação · selecione uma simulação no topo ou clique nos elementos da cidade';
       const presets = Object.entries(CAMERA_PRESETS).filter(([, p]) => p.mode === 'operacional');
       setChildren(
         camsHost,

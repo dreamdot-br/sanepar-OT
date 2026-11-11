@@ -977,13 +977,13 @@ export const LAKEHOUSE_LINKS = [
   { id: 'ref-e-d0', from: 'ref_energia', to: 'use_d0', kind: 'use' },
 ];
 
-// ---- Duas Narrativas Automáticas de Negócio na Cidade 3D (Auto-Loop estilo Energisa) ----
+// ---- Duas Simulações Automáticas de Negócio na Cidade 3D (Auto-Loop) ----
 // 100% em linguagem de negócio (sem jargão técnico de banco de dados/algoritmo na tela).
 export const BUSINESS_STORIES = {
   demanda_24h: {
     id: 'demanda_24h',
-    shortLabel: '▶ História 1 · Antecipando a Demanda 24h',
-    title: 'Narrativa 1 · Antecipando o Consumo da Cidade nas Próximas 24 Horas',
+    shortLabel: '▶ Previsão de Demanda 24h',
+    title: 'Antecipando o Consumo da Cidade nas Próximas 24 Horas',
     acts: [
       {
         id: 'd1_manha',
@@ -1059,8 +1059,8 @@ export const BUSINESS_STORIES = {
 
   vazamento_madrugada: {
     id: 'vazamento_madrugada',
-    shortLabel: '▶ História 2 · Caça ao Vazamento Invisível',
-    title: 'Narrativa 2 · Identificando Vazamentos Ocultos no Silêncio da Madrugada',
+    shortLabel: '▶ Predição de Vazamento Oculto',
+    title: 'Identificação de Vazamentos Ocultos no Silêncio da Madrugada',
     acts: [
       {
         id: 'v1_silencio',
@@ -1074,7 +1074,7 @@ export const BUSINESS_STORIES = {
         banner: '02:30 DA MADRUGADA · Casas dormindo e torneiras fechadas: o momento em que a rede revela perdas ocultas',
         headline: '1 · O silêncio da madrugada: quando quase ninguém consome água',
         narrative:
-          'Entre 22h e 06h o consumo das famílias cai ao mínimo. Se muita água continua entrando num bairro toda madrugada, ela provavelmente está escapando por baixo da terra — mesmo que o asfalto na superfície esteja completamente seco.',
+          'Entre 22h e 06h o consumo das famílias cai ao mínimo. Se muita água continua entrando num bairro durante a madrugada, ela pode estar escapando por baixo da terra — mesmo que o asfalto na superfície esteja completamente seco.',
         kpis: [
           ['Janela Analisada', 'Toda madrugada (22h às 06h)'],
           ['Foco da Busca', 'Vazamentos ocultos que não afloram na rua'],
@@ -1086,76 +1086,76 @@ export const BUSINESS_STORIES = {
         ],
       },
       {
-        id: 'v2_quinta_noite',
+        id: 'v2_filtro_manobra',
+        durationSec: 12,
+        clock: '03:15',
+        weather: 'Madrugada · Qualificação',
+        status: 'DESCARTANDO MANOBRAS E CASOS ISOLADOS',
+        statusKind: 'info',
+        nightLight: true,
+        cameraPreset: 'campo_rede',
+        maintEffect: true,
+        banner: 'TRIAGEM INTELIGENTE · Sistema descarta manobras programadas, feriados e oscilações de uma única noite',
+        headline: '2 · Avaliando se não é algo programado previamente ou um caso isolado',
+        narrative:
+          'Nem toda alta noturna é vazamento: antes de gerar um alerta, o sistema verifica se houve manobra operacional na região, se é feriado ou apenas um evento isolado de uma noite. Isso reduz em cerca de 20% os deslocamentos desnecessários de equipes.',
+        kpis: [
+          ['Redução de Falsos Alertas', '−20% de deslocamentos improdutivos'],
+          ['Filtro de Manobra', 'Descarta quando a região inteira subiu junta por manobra'],
+          ['Filtro de Caso Isolado', 'Ignora picos passageiros de apenas 1 ou 2 noites'],
+        ],
+        callouts: [
+          { pos: [5.4, 8.2, 4.5], kind: 'info', title: 'MANOBRA PROGRAMADA · IGNORADA', sub: 'Região subiu junta · Equipe NÃO precisa ir a campo' },
+          { pos: [-13.6, 3.2, 11.4], kind: 'ok', title: 'OSCILAÇÃO DE 1 NOITE · DESCARTADA', sub: 'Caso isolado sem persistência nas noites seguintes' },
+        ],
+      },
+      {
+        id: 'v3_quinta_noite',
         durationSec: 13,
-        clock: '03:40',
-        weather: 'Madrugada · 5ª Noite Seguida',
-        status: 'VAZAMENTO OCULTO DETECTADO',
+        clock: '04:45',
+        weather: 'Madrugada · Persistência Confirmada',
+        status: '5 DE 7 MADRUGADAS ACIMA DO NORMAL',
         statusKind: 'crit',
         nightLight: true,
         cameraPreset: 'campo_rede',
         leakEffect: true,
-        banner: 'ALERTA PERSISTENTE · 5 de 7 madrugadas com vazão +38% acima do normal sob a Avenida Central',
-        headline: '2 · Cinco madrugadas seguidas acima do normal: água escapando no subsolo',
+        banner: 'VAZAMENTO OCULTO CONFIRMADO · 5 das últimas 7 madrugadas com vazão +38% acima do normal sob a Avenida Central',
+        headline: '3 · Cinco de sete madrugadas acima do normal: água escapando no subsolo',
         narrative:
-          'Uma única noite alta pode ser um evento isolado. Mas quando o mesmo setor registra vazão mínima mais de 30% acima do normal em 5 das últimas 7 madrugadas, o sistema identifica um vazamento subterrâneo já em curso.',
+          'Descartadas as manobras e os casos isolados, o setor sob a Avenida Central permanece mais de 30% acima do normal em 5 das últimas 7 madrugadas. É a confirmação de um vazamento subterrâneo em curso antes de aflorar na rua.',
         kpis: [
-          ['Persistência Confirmada', '5 das últimas 7 madrugadas acima do normal'],
+          ['Regra de Confirmação', '5 das últimas 7 madrugadas acima do normal'],
           ['Volume Escapando', '+38% acima do consumo mínimo esperado'],
-          ['Visibilidade', 'Invisível na superfície · Detectado pelo dado'],
+          ['Visibilidade', 'Invisível no asfalto · Confirmado pela recorrência'],
         ],
         callouts: [
-          { pos: [3.6, 3.6, 12.6], kind: 'crit', title: 'VAZAMENTO OCULTO NO SUBSOLO', sub: '5 de 7 madrugadas acima do normal (+38%)' },
-          { pos: [-13.6, 3.2, 11.4], kind: 'ok', title: 'BAIRRO OESTE · NORMAL', sub: 'Mínima noturna dentro do padrão histórico' },
-        ],
-      },
-      {
-        id: 'v3_filtro_manobra',
-        durationSec: 12,
-        clock: '05:30',
-        weather: 'Amanhecer · Qualificação',
-        status: 'FALSOS ALARMES FILTRADOS (-20%)',
-        statusKind: 'info',
-        nightLight: false,
-        cameraPreset: 'campo_rede',
-        leakEffect: true,
-        maintEffect: true,
-        banner: 'INTELIGÊNCIA DE CAMPO · Manobra operacional no Bairro Norte é filtrada; equipe só vai onde é vazamento real',
-        headline: '3 · Separando vazamento real de manobra da própria operação',
-        narrative:
-          'Quando metade de uma região sobe junta por causa de uma manobra de rede ou feriado, o sistema reconhece sozinho e não gera alarme falso. Isso reduz em cerca de 20% o envio desnecessário de equipes para a rua.',
-        kpis: [
-          ['Redução de Falsos Alertas', '−20% de deslocamentos improdutivos'],
-          ['Filtro de Manobra', 'Ignora quando a zona inteira subiu junta por manobra'],
-          ['Foco da Equipe', '100% concentrada nos pontos de perda real'],
-        ],
-        callouts: [
-          { pos: [5.4, 8.2, 4.5], kind: 'info', title: 'MANOBRA DE REDE · ALARME SUPRIMIDO', sub: 'Região subiu junta · Equipe NÃO precisa ir a campo' },
-          { pos: [3.6, 3.6, 12.6], kind: 'crit', title: 'SUSPEITA CONFIRMADA · PRIORIDADE 1', sub: 'Comportamento isolado de vazamento persistente' },
+          { pos: [3.6, 3.6, 12.6], kind: 'crit', title: 'VAZAMENTO OCULTO CONFIRMADO', sub: '5 de 7 madrugadas acima do normal (+38%)' },
+          { pos: [18.2, 3.8, 11.4], kind: 'warn', title: 'PRIORIDADE 1 PARA CAMPO', sub: 'Comportamento persistente validado para abertura de OS' },
         ],
       },
       {
         id: 'v4_reparo_preventivo',
-        durationSec: 11,
+        durationSec: 20,
         clock: '06:00',
-        weather: 'Manhã · Despacho de Equipe',
-        status: 'EQUIPE DIRECIONADA AO LOCAL',
+        weather: 'Manhã · Intervenção em Campo',
+        status: 'EQUIPE SANEPAR EM ATUAÇÃO NO LOCAL',
         statusKind: 'ok',
         nightLight: false,
-        cameraPreset: 'campo_geral',
+        cameraPreset: 'campo_rede',
         leakEffect: true,
-        banner: '06:00 DA MANHÃ · Ponto sinalizado no painel para reparo antes de romper o asfalto e afetar o trânsito',
-        headline: '4 · Reparo antes da cratera: economia de água, tempo e imagem pública',
+        truckDispatch: true,
+        banner: '06:00 DA MANHÃ · Viatura da Sanepar se desloca direto ao ponto indicado e estanca o vazamento antes de romper a via',
+        headline: '4 · Equipe Sanepar em campo: intervenção certeira antes de abrir cratera na avenida',
         narrative:
-          'Logo às 06:00 da manhã, a operação recebe a indicação clara de onde atuar. O reparo é feito de forma planejada antes que a tubulação estoure na avenida, evitando desperdício de água tratada, transtorno no trânsito e desgaste com a população.',
+          'Logo ao amanhecer, a equipe de manutenção da Sanepar sai direto para o trecho sinalizado, posiciona a viatura e executa o reparo na rede subterrânea antes que a tubulação estoure o asfalto, preservando a água tratada e o trânsito da cidade.',
         kpis: [
-          ['Entrega para Decisão', 'Todos os dias às 06:00 da manhã'],
-          ['Preservação Urbana', 'Atuação antes de abrir cratera na via pública'],
-          ['Combate a Perdas', 'Recuperação de água já tratada e bombeada'],
+          ['Despacho às 06:00', 'Equipe direcionada exatamente ao setor confirmado'],
+          ['Intervenção Preventiva', 'Vazamento contido antes de romper o pavimento'],
+          ['Resultado para a Cidade', 'Água recuperada, trânsito fluindo e clientes abastecidos'],
         ],
         callouts: [
-          { pos: [3.6, 3.8, 12.6], kind: 'ok', title: 'POSSÍVEL VAZAMENTO SINALIZADO', sub: 'Equipe de busca ativa direcionada ao setor exato' },
-          { pos: [5.5, 8.2, 4.8], kind: 'ok', title: 'TRÂNSITO E COMÉRCIO PRESERVADOS', sub: 'Sem rompimento grave na avenida principal' },
+          { pos: [3.6, 4.2, 9.2], kind: 'ok', title: 'EQUIPE SANEPAR NO LOCAL', sub: 'Intervenção em andamento · Vazamento sendo estancado' },
+          { pos: [14.5, 4.2, 8.8], kind: 'info', title: 'VIA PÚBLICA PRESERVADA', sub: 'Atuação antes de abrir cratera na avenida' },
         ],
       },
     ],
